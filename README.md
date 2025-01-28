@@ -1,2 +1,1 @@
-# chatbot
-AI chatbot.
+# gautier-stage

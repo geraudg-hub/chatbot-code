@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot Interface</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.1.2/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    #chatbox {
+      height: 400px;
+      overflow-y: scroll;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+      margin-bottom: 10px;
+    }
+
+    .user-message, .bot-message {
+      margin-bottom: 10px;
+      padding: 5px;
+      border-radius: 5px;
+      max-width: 70%;
+      display: inline-block;
+      word-wrap: break-word;
+    }
+
+    .user-message {
+      text-align: right;
+      background-color: #d1f7ff;
+    }
+
+    .bot-message {
+      text-align: left;
+      background-color: #e1e1e1;
+    }
+
+    #input-message {
+      width: 80%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .send-button {
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .send-button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-4">
+
+  <!-- Chat interface -->
+  <div class="container mx-auto max-w-lg bg-white p-4 rounded-lg shadow-lg">
+    <h2 class="text-center text-xl font-bold">Chatbot</h2>
+    <div id="chatbox" class="my-4">
+      <!-- Messages will appear here -->
+    </div>
+    <div class="flex justify-between">
+      <input type="text" id="input-message" placeholder="Tapez votre message..." class="text-sm p-2 border rounded w-4/5" />
+      <button id="send-button" class="send-button w-1/5">Envoyer</button>
+    </div>
+  </div>
+<script src="../static/script.js"></script>
+</body>
+</html>

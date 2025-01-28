@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  myapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 80:5000
+    env_file:
+      - .env
+    volumes:
+      - ./app.py:/opt/app/app.py
+      - ./summarizer.py:/opt/app/summarize.py
+      - ./static:/opt/app/static
+      - ./templates:/opt/app/templates
