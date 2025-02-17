@@ -117,9 +117,5 @@ def chat():
     # Retourner la réponse du bot et le thread_id sous forme de JSON
     return jsonify({"response": bot_reply, "thread_id": thread_id})
 
-@app.route('/', methods=['GET'])
-def home():
-    return render_template("index.html")
-
 if __name__ == '__main__':
     app.run(debug=True)
