@@ -15,7 +15,7 @@ services:
       - ./templates:/opt/app/templates
     depends_on:
       mysql-db:
-        condition: service_healthy  # Attend que MySQL soit prêt
+        condition: service_healthy  # Attendre que MySQL soit prêt
     networks:
       - app-network
 

@@ -16,8 +16,6 @@ load_dotenv()
 # Initialiser Flask
 app = Flask(__name__)
 
-
-
 # Configuration de la base de données
 class Config:
     SQLALCHEMY_DATABASE_URI = (
@@ -31,10 +29,9 @@ app.config.from_object(Config)
 app.config['BASIC_AUTH_USERNAME'] = os.getenv('BASIC_AUTH_USERNAME')
 app.config['BASIC_AUTH_PASSWORD'] = os.getenv('BASIC_AUTH_PASSWORD')
 
-
 # Initialisation des extensions
 db.init_app(app)
-migrate.init_app(app, db)
+migrate.init_app(app, db)  # Initialisation de Migrate
 
 basic_auth = BasicAuth(app)
 
@@ -44,8 +41,6 @@ app.register_blueprint(admin_bp, url_prefix='/admin')
 with app.app_context():
     db.session.remove()
     db.engine.dispose()
-
-migrate = Migrate(app, db)
 
 # Vérification connexion à la base
 with app.app_context():
@@ -79,8 +74,6 @@ def start_chat():
     
     # Retourner le thread_id au frontend
     return jsonify({"thread_id": thread_id}), 200
-
-
 
 @app.route('/chat', methods=['POST'])
 def chat():

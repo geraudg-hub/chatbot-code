@@ -1,0 +1,1 @@
+from .models import Thread, Message  # ✔️ Force l'import des modèles
