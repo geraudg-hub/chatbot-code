@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistiques</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.2/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100">
+
+  <!-- Ici on charge dynamiquement le header -->
+  {% include "header.html" %}
+
+    <!-- Container -->
+    <div class="container mx-auto mt-8 px-4">
+
+    <!-- Stats des dernières 24h -->
+    <div class="bg-white shadow-lg rounded-lg p-6 mb-8">
+        <h2 class="text-xl font-bold mb-4">Statistiques des 24 dernières heures</h2>
+        <div class="flex justify-between">
+            <div class="w-1/2">
+                <p class="font-semibold">Threads créés :</p>
+                <p id="threads-24h" class="text-xl text-blue-600">-</p>
+                <p class="font-semibold mt-2">Threads totaux :</p>
+                <p id="total-threads" class="text-xl text-blue-600">-</p> <!-- Ajout du total des threads -->
+            </div>
+            <div class="w-1/2">
+                <p class="font-semibold">Messages créés (question + réponse) :</p>
+                <p id="messages-24h" class="text-xl text-blue-600">-</p>
+                <p class="font-semibold mt-2">Messages totaux :</p>
+                <p id="total-messages" class="text-xl text-blue-600">-</p> <!-- Ajout du total des messages -->
+            </div>
+        </div>
+    </div>
+
+                <!-- Graphique des threads par jour -->
+        <div class="bg-white shadow-lg rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Threads par Jour</h2>
+            <div class="flex mb-4">
+                <label for="days-select-threads" class="mr-2">Choisir le nombre de jours:</label>
+                <select id="days-select-threads" class="border px-2 py-1">
+                    <option value="7">7 jours</option>
+                    <option value="14">14 jours</option>
+                    <option value="30">30 jours</option>
+                </select>
+            </div>
+            <canvas id="threadsPerDayChart"></canvas>
+        </div>
+
+        <!-- Graphique des messages par jour -->
+        <div class="bg-white shadow-lg rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Messages par Jour</h2>
+            <div class="flex mb-4">
+                <label for="days-select-messages" class="mr-2">Choisir le nombre de jours:</label>
+                <select id="days-select-messages" class="border px-2 py-1">
+                    <option value="7">7 jours</option>
+                    <option value="14">14 jours</option>
+                    <option value="30">30 jours</option>
+                </select>
+            </div>
+            <canvas id="messagesPerDayChart"></canvas>
+        </div>
+
+
+        <!-- Graphique des messages par heure -->
+        <div class="bg-white shadow-lg rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Messages Moyens par Heure</h2>
+            <div class="flex mb-4">
+                <label for="days-select" class="mr-2">Choisir le nombre de jours:</label>
+                <select id="days-select" class="border px-2 py-1">
+                    <option value="7">7 jours</option>
+                    <option value="14">14 jours</option>
+                    <option value="30">30 jours</option>
+                </select>
+            </div>
+            <canvas id="messagesPerHourChart"></canvas>
+        </div>
+
+    </div>
+    
+    <script src="{{ url_for('static', filename='js/statistiques.js') }}"></script>
+</body>
+</html>

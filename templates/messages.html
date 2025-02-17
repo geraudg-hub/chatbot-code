@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages du Thread</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.1.2/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    #chatbox {
+      height: 400px;
+      overflow-y: auto;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background-color: #f9f9f9;
+      margin-bottom: 10px;
+    }
+
+    .message {
+      display: block;
+      margin-bottom: 15px;
+      padding: 12px;
+      border-radius: 12px;
+      max-width: 75%;
+      word-wrap: break-word;
+      clear: both;
+      position: relative;
+    }
+
+    .user-message {
+      background-color: #6ee7b7;
+      float: right;
+      margin-right: 5px;
+    }
+
+    .bot-message {
+      background-color: #93c5fd;
+      float: left;
+      margin-left: 5px;
+    }
+
+    .message::after {
+      content: "";
+      display: table;
+      clear: both;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-4">
+
+  {% include "header.html" %}
+
+  <div class="container mx-auto max-w-lg bg-white p-4 rounded-lg shadow-lg">
+    <h2 class="text-center text-xl font-bold mb-4">Historique de la Conversation</h2>
+    <div id="chatbox" data-thread-id="{{ thread_id }}">
+      <!-- Les messages seront injectés ici -->
+    </div>
+  </div>
+
+  <!-- Lien vers le script JS -->
+  <script src="{{ url_for('static', filename='js/messages.js') }}"></script>
+
+</body>
+</html>

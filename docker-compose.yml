@@ -1,16 +1,50 @@
-version: '3'
-
 services:
   myapp:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - 80:5000
+      - "80:5000"
     env_file:
-      - .env
+      - .env  # Charge les variables d'environnement depuis .env
     volumes:
+      - ./migrations:/opt/app/migrations
       - ./app.py:/opt/app/app.py
       - ./summarizer.py:/opt/app/summarize.py
       - ./static:/opt/app/static
       - ./templates:/opt/app/templates
+    depends_on:
+      mysql-db:
+        condition: service_healthy  # Attend que MySQL soit prêt
+    networks:
+      - app-network
+
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: always
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 2s
+      retries: 1
+      timeout: 1s
+
+volumes:
+  mysql_data:
+
+networks:
+  app-network:
+    driver: bridge

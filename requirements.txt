@@ -2,3 +2,8 @@ openai==1.60.0
 Flask==3.1.0
 python-dotenv==1.0.1
 Flask-Cors==5.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.1.0
+PyMySQL==1.1.1
+cryptography==44.0.0
+Flask-BasicAuth==0.2.0
