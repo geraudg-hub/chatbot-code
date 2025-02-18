@@ -52,7 +52,7 @@ with app.app_context():
 conversations = {}
 
 # Route pour le template html
-template_name = os.getenv('APP_ROUTE_TEMPLATE')
+template_name = "test.html"
 
 @app.route('/test')
 def test():
