@@ -7,3 +7,4 @@ Flask-Migrate==4.1.0
 PyMySQL==1.1.1
 cryptography==44.0.0
 Flask-BasicAuth==0.2.0
+dotenv==0.0.5
