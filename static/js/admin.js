@@ -2,7 +2,7 @@ $(document).ready(function() {
     // Initialisation de DataTables avec AJAX
     $('#threadsTable').DataTable({
         "ajax": {
-            "url": "http://localhost/admin/threads", // Assurez-vous que le serveur Flask tourne sur le port 5000
+            "url": "/admin/threads", // Assurez-vous que le serveur Flask tourne sur le port 5000
             "dataSrc": ""
         },
         "columns": [
@@ -34,7 +34,7 @@ $(document).ready(function() {
                 "data": "thread_id",
                 "render": function(data, type, row) {
                     // Créer un bouton qui redirige vers une page avec les messages du thread
-                    return `<a href="http://localhost/admin/thread/${data}/messages/view" class="btn btn-primary">Voir Messages</a>`;
+                    return `<a href="/admin/thread/${data}/messages/view" class="btn btn-primary">Voir Messages</a>`;
                 }
             }
         ],
