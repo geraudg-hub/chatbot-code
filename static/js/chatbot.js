@@ -191,14 +191,6 @@ document.addEventListener('DOMContentLoaded', function() {
           const threadResponse = await fetch(API_START_CHAT, { method: 'POST' });
           const threadData = await threadResponse.json();
           
-
-        try {
-          const data = JSON.parse(text); // Essayer de parser en JSON
-          console.log(data);
-        } catch (error) {
-          console.error("Réponse non JSON :", text); // Afficher le texte si ce n'est pas du JSON
-        }
-
           if (threadResponse.ok && threadData.thread_id) {
             threadId = threadData.thread_id;
             localStorage.setItem('thread_id', threadId);
