@@ -221,16 +221,18 @@ document.addEventListener('DOMContentLoaded', function() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: message, thread_id: threadId })
         });
-  
-        const data = await response.json();
-        if (response.ok) {
-          displayMessage(data.response, 'bot');
-        } else {
-          throw new Error(data.error || 'Erreur inconnue');
+    
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
+    
+        const data = await response.json();
+        displayMessage(data.response, 'bot');
+        
       } catch (error) {
-        console.error('Erreur :', error.message);
-        displayMessage('Erreur : Impossible de récupérer une réponse du bot.', 'bot');
+        console.error('Erreur :', error);
+        displayMessage('Erreur de communication avec le serveur', 'bot');
       } finally {
         input.disabled = false;
         sendBtn.disabled = false;

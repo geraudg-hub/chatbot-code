@@ -61,19 +61,24 @@ def test():
 # Nouvelle route pour créer un thread
 @app.route('/start_chat', methods=['POST'])
 def start_chat():
-    # Appel à openai_client.py pour créer un nouveau thread
-    thread_id = create_new_thread()
-
-    if not thread_id:
-        return jsonify({"error": "Impossible de créer un thread."}), 500
-    
-    # Créer l'entrée dans la table Thread
-    new_thread = Thread(id=thread_id, title="Nouvelle conversation")
-    db.session.add(new_thread)
-    db.session.commit()
-    
-    # Retourner le thread_id au frontend
-    return jsonify({"thread_id": thread_id}), 200
+    try:
+        thread_id = create_new_thread()
+        if not thread_id:
+            return jsonify({"error": "Impossible de créer un thread."}), 500
+        
+        # Vérifier l'unicité du thread_id
+        if Thread.query.get(thread_id):
+            return jsonify({"error": "Thread existe déjà"}), 409
+            
+        new_thread = Thread(id=thread_id, title="Nouvelle conversation")
+        db.session.add(new_thread)
+        db.session.commit()
+        return jsonify({"thread_id": thread_id}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Erreur start_chat: {str(e)}")
+        return jsonify({"error": "Erreur serveur"}), 500
 
 @app.route('/chat', methods=['POST'])
 def chat():
