@@ -272,74 +272,81 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 
-  async function sendMessage(message) {
-    isWaitingForResponse = true;
-    displayMessage(message, 'user');
-    
-    sendBtn.disabled = true;
-    input.value = '';
-    input.placeholder = "Waiting for answer...";
+async function sendMessage(message) {
+  isWaitingForResponse = true;
+  displayMessage(message, 'user');
+  
+  sendBtn.disabled = true;
+  input.value = '';
+  input.placeholder = "Waiting for answer...";
 
-    try {
-        let threadId = localStorage.getItem('thread_id');
-        let isNewThread = false;
+  try {
+      let threadId = localStorage.getItem('thread_id');
+      let isNewThread = false;
 
-        // Vérification initiale de la session
-        if (threadId) {
-            const statusResponse = await fetch(`${API_SESSION_STATUS}?thread_id=${threadId}`);
-            if (!statusResponse.ok) throw new Error('Erreur vérification session');
-            
-            const { remaining_time, remaining_chars } = await statusResponse.json();
-            
-            if (remaining_time <= 0 || remaining_chars <= 0) {
-                disableChatInput("Session expirée - Veuillez recharger");
-                localStorage.removeItem('thread_id');
-                displayMessage("Session expired.", 'bot');
-                return;
-            }
-        }
+      // Vérification initiale de la session
+      if (threadId) {
+          const statusResponse = await fetch(`${API_SESSION_STATUS}?thread_id=${threadId}`);
+          if (!statusResponse.ok) throw new Error('Erreur vérification session');
+          
+          const { remaining_time, remaining_chars } = await statusResponse.json();
+          
+          if (remaining_time <= 0 || remaining_chars <= 0) {
+              disableChatInput("Session expirée - Veuillez recharger");
+              localStorage.removeItem('thread_id');
+              displayMessage("Session expired.", 'bot');
+              return;
+          }
+      }
 
-        if (!threadId) {
-            const threadResponse = await fetch(API_START_CHAT, { method: 'POST' });
-            const threadData = await threadResponse.json();
-            threadId = threadData.thread_id;
-            localStorage.setItem('thread_id', threadId);
-            isNewThread = true;
-        }
+      if (!threadId) {
+          const threadResponse = await fetch(API_START_CHAT, { method: 'POST' });
+          const threadData = await threadResponse.json();
+          threadId = threadData.thread_id;
+          localStorage.setItem('thread_id', threadId);
+          isNewThread = true;
+      }
 
-        const response = await fetch(API_CHAT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message, thread_id: threadId })
-        });
+      const response = await fetch(API_CHAT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, thread_id: threadId })
+      });
 
-        // Gestion des réponses d'erreur
-        if (!response.ok) {
-            const data = await response.json();
-            if (response.status === 403) { // Session expirée
-                disableChatInput(data.error);
-                localStorage.removeItem('thread_id');
-                displayMessage(data.error, 'bot');
-                return;
-            }
-            throw new Error(data.error || 'Erreur inconnue');
-        }
+      // Gestion des réponses d'erreur
+      if (!response.ok) {
+          const data = await response.json();
+          
+          // Cas spécifique: message trop long
+          if (response.status === 400 && data.type === 'message_length') {
+              displayMessage(data.error, 'bot');
+              return; // On sort sans désactiver le chat
+          }
+          // Cas général des autres erreurs
+          if (response.status === 403) { // Session expirée
+              disableChatInput(data.error);
+              localStorage.removeItem('thread_id');
+              displayMessage(data.error, 'bot');
+              return;
+          }
+          throw new Error(data.error || 'Erreur inconnue');
+      }
 
-        const data = await response.json();
-        displayMessage(data.response, 'bot');
-        if (!isNewThread) checkSessionLimits(threadId);
+      const data = await response.json();
+      displayMessage(data.response, 'bot');
+      if (!isNewThread) checkSessionLimits(threadId);
 
-    } catch (error) {
-        if (error.message.includes('expirée') || error.message.includes('dépassée')) {
-            disableChatInput(error.message);
-            localStorage.removeItem('thread_id');
-        }
-        displayMessage(`Erreur : ${error.message}`, 'bot');
-    } finally {
-        isWaitingForResponse = false;
-        sendBtn.disabled = false;
-        input.placeholder = "Enter your message...";
-    }
+  } catch (error) {
+      if (error.message.includes('expirée') || error.message.includes('dépassée')) {
+          disableChatInput(error.message);
+          localStorage.removeItem('thread_id');
+      }
+      displayMessage(`Erreur : ${error.message}`, 'bot');
+  } finally {
+      isWaitingForResponse = false;
+      sendBtn.disabled = false;
+      input.placeholder = "Enter your message...";
+  }
 }
 
 async function loadHistory() {

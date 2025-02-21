@@ -17,7 +17,7 @@ from sqlalchemy import func
 load_dotenv()
 MAX_SESSION_DURATION = int(os.getenv('MAX_SESSION_DURATION', 30))
 MAX_CHARACTERS = int(os.getenv('MAX_CHARACTERS', 100))
-MAX_MESSAGE_CHARACTERS = int(os.getenv('MAX_MESSAGE_CHARACTERS', 20))
+MAX_MESSAGE_CHARACTERS = int(os.getenv('MAX_MESSAGE_CHARACTERS', 500))
 
 
 
@@ -119,7 +119,8 @@ def chat():
         return jsonify({"error": "Message vide"}), 400
 
     if len(user_message) > MAX_MESSAGE_CHARACTERS:
-        return jsonify({"error": f"Le message dépasse la limite de {MAX_MESSAGE_CHARACTERS} caractères."}), 400
+        return jsonify({
+            "error": f"Message too long."}), 400
 
     if not thread_id:
         return jsonify({"error": "Thread ID manquant. Veuillez démarrer une nouvelle conversation."}), 400
