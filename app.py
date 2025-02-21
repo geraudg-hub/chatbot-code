@@ -15,9 +15,9 @@ from sqlalchemy import func
 
 # Charger les variables d'environnement
 load_dotenv()
-MAX_SESSION_DURATION = int(os.getenv('MAX_SESSION_DURATION'))
-MAX_CHARACTERS = int(os.getenv('MAX_CHARACTERS'))
-MAX_MESSAGE_CHARACTERS = int(os.getenv('MAX_MESSAGE_CHARACTERS'))
+MAX_SESSION_DURATION = int(os.getenv('MAX_SESSION_DURATION', 30))
+MAX_CHARACTERS = int(os.getenv('MAX_CHARACTERS', 100))
+MAX_MESSAGE_CHARACTERS = int(os.getenv('MAX_MESSAGE_CHARACTERS', 20))
 
 
 
