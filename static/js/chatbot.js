@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
       flex: 1;
       padding: 15px;
       overflow-y: auto;
+      overflow-x: hidden;
       background: #f8fbfa;
       scrollbar-width: thin;
       scrollbar-color: #0b5577 #f8fbfa;
