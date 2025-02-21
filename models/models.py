@@ -6,8 +6,9 @@ class Thread(db.Model):
     id = db.Column(db.String(36), primary_key=True)
     title = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    messages = db.relationship('Message', backref='thread', lazy=True) 
-
+    status = db.Column(db.String(20), default='active')  # Modification ici
+    messages = db.relationship('Message', backref='thread', lazy=True)
+    
 class Message(db.Model):
     __tablename__ = 'messages'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)

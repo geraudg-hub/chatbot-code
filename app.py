@@ -9,9 +9,17 @@ from extensions import db, migrate
 from models.models import Thread, Message
 from config import Config
 from flask_basicauth import BasicAuth
+from datetime import datetime, timedelta
+from dotenv import load_dotenv
+from sqlalchemy import func
 
 # Charger les variables d'environnement
 load_dotenv()
+MAX_SESSION_DURATION = int(os.getenv('MAX_SESSION_DURATION'))
+MAX_CHARACTERS = int(os.getenv('MAX_CHARACTERS'))
+MAX_MESSAGE_CHARACTERS = int(os.getenv('MAX_MESSAGE_CHARACTERS'))
+
+
 
 # Initialiser Flask
 app = Flask(__name__)
@@ -58,6 +66,33 @@ template_name = "test.html"
 def test():
     return render_template(template_name)
 
+@app.route('/session_status', methods=['GET'])
+def session_status():
+    thread_id = request.args.get('thread_id')
+    if not thread_id:
+        return jsonify({"error": "Thread ID manquant"}), 400
+
+    thread = Thread.query.get(thread_id)
+    if not thread:
+        return jsonify({"error": "Thread introuvable"}), 404
+
+    total_chars = db.session.query(func.sum(func.length(Message.content)))\
+                  .filter(Message.thread_id == thread_id)\
+                  .scalar() or 0
+
+    session_age = (datetime.utcnow() - thread.created_at).total_seconds()
+    remaining_time = MAX_SESSION_DURATION - session_age
+    remaining_chars = MAX_CHARACTERS - total_chars
+
+    expired = remaining_time <= 0 or remaining_chars <= 0
+
+    return jsonify({
+        "remaining_time": remaining_time,
+        "remaining_chars": remaining_chars,
+        "expired": expired
+    })
+
+
 # Nouvelle route pour créer un thread
 @app.route('/start_chat', methods=['POST'])
 def start_chat():
@@ -77,38 +112,63 @@ def start_chat():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    # Récupérer l'identifiant du thread et le message utilisateur depuis la requête JSON
     thread_id = request.json.get("thread_id")
     user_message = request.json.get("message")
 
-    # Vérifier que le message utilisateur n'est pas vide
     if not user_message:
         return jsonify({"error": "Message vide"}), 400
 
-    # Si aucun thread_id n'est fourni, en générer un nouveau avec UUID
-    if not thread_id:
-        return jsonify({"error": "Thread ID manquant. Veuillez démarer une nouvelle conversation."}), 400
-    
-    # Chercher le thread dans la base de données
-    thread = Thread.query.filter_by(id=thread_id).first()
-    if not thread:
-        return jsonify({"error": "Thread introuvable"}), 404
+    if len(user_message) > MAX_MESSAGE_CHARACTERS:
+        return jsonify({"error": f"Le message dépasse la limite de {MAX_MESSAGE_CHARACTERS} caractères."}), 400
 
-    # Enregistrer le message utilisateur dans la base de données
+    if not thread_id:
+        return jsonify({"error": "Thread ID manquant. Veuillez démarrer une nouvelle conversation."}), 400
+
+    thread = Thread.query.filter_by(id=thread_id).first()
+    if not thread or thread.status == 'expired':
+        return jsonify({"error": "Session bloquée"}), 403
+
+    # Vérification de l'expiration par le temps
+    session_age = (datetime.utcnow() - thread.created_at).total_seconds()
+    if session_age > MAX_SESSION_DURATION:
+        thread.status = 'expired'  # Marquer comme expiré au lieu de supprimer
+        db.session.commit()
+        return jsonify({"error": "Session expirée"}), 403
+
+    # Calcul du nombre total de caractères déjà utilisés
+    total_chars = db.session.query(func.sum(func.length(Message.content)))\
+                   .filter(Message.thread_id == thread_id)\
+                   .scalar() or 0
+
+    if total_chars + len(user_message) > MAX_CHARACTERS:
+        thread.status = 'expired'  # Marquer comme expiré
+        db.session.commit()
+        return jsonify({"error": "Limite de caractères pour le thread dépassée"}), 403
+
+    # À ce stade, la session est encore valide. On peut enregistrer le message.
     user_message_db = Message(thread_id=thread.id, content=user_message, origin="user")
     db.session.add(user_message_db)
     db.session.commit()
 
-    # Appeler la fonction bot_response pour obtenir la réponse du bot via Azure OpenAI
+    # Appel à bot_response pour obtenir la réponse du bot
     bot_reply = bot_response(user_message, thread_id)
 
-    # Enregistrer la réponse du bot dans la base de données
+    # Vérification si l'ajout de la réponse dépasse la limite de caractères
+    if total_chars + len(user_message) + len(bot_reply) > MAX_CHARACTERS:
+        thread.status = 'expired'  # Marquer le thread comme expiré
+        db.session.commit()
+        return jsonify({"error": "Limite de caractères du thread dépassée"}), 403
+
     bot_message_db = Message(thread_id=thread.id, content=bot_reply, origin="bot")
     db.session.add(bot_message_db)
     db.session.commit()
 
-    # Retourner la réponse du bot et le thread_id sous forme de JSON
-    return jsonify({"response": bot_reply, "thread_id": thread_id})
+    return jsonify({
+        "response": bot_reply,
+        "thread_id": thread_id
+    })
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

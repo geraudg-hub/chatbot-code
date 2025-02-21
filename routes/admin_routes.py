@@ -10,6 +10,19 @@ admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 basic_auth = BasicAuth()
 
+@admin_bp.route('/thread/<string:thread_id>/messages', methods=['GET'])
+@basic_auth.required
+def get_messages_by_thread(thread_id):
+    messages = Message.query.filter_by(thread_id=thread_id)\
+                           .order_by(Message.created_at.asc())\
+                           .all()
+    
+    return jsonify([{
+        "content": message.content,
+        "origin": message.origin,
+        "created_at": message.created_at.isoformat()
+    } for message in messages])
+
 # Route pour afficher le tableau de bord d'administration
 @admin_bp.route('/', methods=['GET'])
 @basic_auth.required
@@ -52,7 +65,7 @@ def get_threads():
     return jsonify(data)
 
 # Route pour récupérer les messages d'un thread
-@admin_bp.route('/thread/<string:thread_id>/messages', methods=['GET'])
+@admin_bp.route('/thread/<string:thread_id>/messages', methods=['GET'], endpoint='get_thread_messages')
 @basic_auth.required
 def get_messages_by_thread(thread_id):
     thread = Thread.query.get_or_404(thread_id)
