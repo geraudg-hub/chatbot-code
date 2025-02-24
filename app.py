@@ -127,14 +127,14 @@ def chat():
 
     thread = Thread.query.filter_by(id=thread_id).first()
     if not thread or thread.status == 'expired':
-        return jsonify({"error": "Session bloquée"}), 403
+        return jsonify({"error": "Session bloquée"}), 400
 
     # Vérification de l'expiration par le temps
     session_age = (datetime.utcnow() - thread.created_at).total_seconds()
     if session_age > MAX_SESSION_DURATION:
         thread.status = 'expired'  # Marquer comme expiré au lieu de supprimer
         db.session.commit()
-        return jsonify({"error": "Session expirée"}), 403
+        return jsonify({"error": "Session expirée"}), 400
 
     # Calcul du nombre total de caractères déjà utilisés
     total_chars = db.session.query(func.sum(func.length(Message.content)))\
@@ -144,7 +144,7 @@ def chat():
     if total_chars + len(user_message) > MAX_CHARACTERS:
         thread.status = 'expired'  # Marquer comme expiré
         db.session.commit()
-        return jsonify({"error": "Limite de caractères pour le thread dépassée"}), 403
+        return jsonify({"error": "Limite de caractères pour le thread dépassée"}), 400
 
     # À ce stade, la session est encore valide. On peut enregistrer le message.
     user_message_db = Message(thread_id=thread.id, content=user_message, origin="user")
@@ -158,7 +158,7 @@ def chat():
     if total_chars + len(user_message) + len(bot_reply) > MAX_CHARACTERS:
         thread.status = 'expired'  # Marquer le thread comme expiré
         db.session.commit()
-        return jsonify({"error": "Limite de caractères du thread dépassée"}), 403
+        return jsonify({"error": "Limite de caractères du thread dépassée"}), 400
 
     bot_message_db = Message(thread_id=thread.id, content=bot_reply, origin="bot")
     db.session.add(bot_message_db)
