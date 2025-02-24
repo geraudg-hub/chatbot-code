@@ -52,7 +52,7 @@ def get_threads():
     for thread in threads:
         messages = thread.messages  # via la relation définie
         message_count = len(messages)
-        last_message = messages[-2].content if messages else "Aucun"
+        last_message = messages[-2].content if len(messages) > 1 else messages[0].content if messages else "Aucun"  
         created_at = thread.created_at.isoformat() if thread.created_at else ""
         
         data.append({

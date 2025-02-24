@@ -313,24 +313,24 @@ async function sendMessage(message) {
             body: JSON.stringify({ message, thread_id: threadId })
         });
 
-        // // Gestion des réponses d'erreur
-        // if (!response.ok) {
-        //     const data = await response.json();
+        // Gestion des réponses d'erreur
+        if (!response.ok) {
+            const data = await response.json();
             
-        //     // Cas spécifique: message trop long
-        //     if (response.status === 400 && data.type === 'message_length') {
-        //         displayMessage(data.error, 'bot');
-        //         return; // On sort sans désactiver le chat
-        //     }
-        //     // Cas général des autres erreurs
-        //     if (response.status === 403) { // Session expirée
-        //         disableChatInput(data.error);
-        //         localStorage.removeItem('thread_id');
-        //         displayMessage(data.error, 'bot');
-        //         return;
-        //     }
-        //     throw new Error(data.error || 'Erreur inconnue');
-        // }
+            // Cas spécifique: message trop long
+            if (response.status === 400 && data.type === 'message_length') {
+                displayMessage(data.error, 'bot');
+                return; // On sort sans désactiver le chat
+            }
+            // Cas général des autres erreurs
+            if (response.status === 403) { // Session expirée
+                disableChatInput(data.error);
+                localStorage.removeItem('thread_id');
+                displayMessage(data.error, 'bot');
+                return;
+            }
+            throw new Error(data.error || 'Erreur inconnue');
+        }
 
         const data = await response.json();
         displayMessage(data.response, 'bot');
