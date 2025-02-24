@@ -70,11 +70,11 @@ def test():
 def session_status():
     thread_id = request.args.get('thread_id')
     if not thread_id:
-        return jsonify({"error": "Thread ID manquant"}), 400
+        return jsonify({"error": "Thread ID manquant"}), 200
 
     thread = Thread.query.get(thread_id)
     if not thread:
-        return jsonify({"error": "Thread introuvable"}), 404
+        return jsonify({"error": "Thread introuvable"}), 200
 
     total_chars = db.session.query(func.sum(func.length(Message.content)))\
                   .filter(Message.thread_id == thread_id)\
@@ -100,7 +100,7 @@ def start_chat():
     thread_id = create_new_thread()
 
     if not thread_id:
-        return jsonify({"error": "Impossible de créer un thread."}), 500
+        return jsonify({"error": "Impossible de créer un thread."}), 200
     
     # Créer l'entrée dans la table Thread
     new_thread = Thread(id=thread_id, title="Nouvelle conversation")
@@ -116,25 +116,25 @@ def chat():
     user_message = request.json.get("message")
 
     if not user_message:
-        return jsonify({"error": "Message vide"}), 400
+        return jsonify({"error": "Message vide"}), 200
 
     if len(user_message) > MAX_MESSAGE_CHARACTERS:
         return jsonify({
-            "error": f"Message too long."}), 400
+            "error": f"Message too long."}), 200
 
     if not thread_id:
-        return jsonify({"error": "Thread ID manquant. Veuillez démarrer une nouvelle conversation."}), 400
+        return jsonify({"error": "Thread ID manquant. Veuillez démarrer une nouvelle conversation."}), 200
 
     thread = Thread.query.filter_by(id=thread_id).first()
     if not thread or thread.status == 'expired':
-        return jsonify({"error": "Session bloquée"}), 403
+        return jsonify({"error": "Session bloquée"}), 200
 
     # Vérification de l'expiration par le temps
     session_age = (datetime.utcnow() - thread.created_at).total_seconds()
     if session_age > MAX_SESSION_DURATION:
         thread.status = 'expired'  # Marquer comme expiré au lieu de supprimer
         db.session.commit()
-        return jsonify({"error": "Session expirée"}), 403
+        return jsonify({"error": "Session expirée"}), 200
 
     # Calcul du nombre total de caractères déjà utilisés
     total_chars = db.session.query(func.sum(func.length(Message.content)))\
@@ -144,7 +144,7 @@ def chat():
     if total_chars + len(user_message) > MAX_CHARACTERS:
         thread.status = 'expired'  # Marquer comme expiré
         db.session.commit()
-        return jsonify({"error": "Limite de caractères pour le thread dépassée"}), 403
+        return jsonify({"error": "Limite de caractères pour le thread dépassée"}), 200
 
     # À ce stade, la session est encore valide. On peut enregistrer le message.
     user_message_db = Message(thread_id=thread.id, content=user_message, origin="user")
@@ -158,7 +158,7 @@ def chat():
     if total_chars + len(user_message) + len(bot_reply) > MAX_CHARACTERS:
         thread.status = 'expired'  # Marquer le thread comme expiré
         db.session.commit()
-        return jsonify({"error": "Limite de caractères du thread dépassée"}), 403
+        return jsonify({"error": "Limite de caractères du thread dépassée"}), 200
 
     bot_message_db = Message(thread_id=thread.id, content=bot_reply, origin="bot")
     db.session.add(bot_message_db)
