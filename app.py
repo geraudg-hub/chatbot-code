@@ -74,7 +74,7 @@ def session_status():
 
     thread = Thread.query.get(thread_id)
     if not thread:
-        return jsonify({"error": "Thread introuvable"}), 404
+        return jsonify({"error": "Thread introuvable"}), 200
 
     total_chars = db.session.query(func.sum(func.length(Message.content)))\
                   .filter(Message.thread_id == thread_id)\
@@ -100,7 +100,7 @@ def start_chat():
     thread_id = create_new_thread()
 
     if not thread_id:
-        return jsonify({"error": "Impossible de créer un thread."}), 500
+        return jsonify({"error": "Impossible de créer un thread."}), 200
     
     # Créer l'entrée dans la table Thread
     new_thread = Thread(id=thread_id, title="Nouvelle conversation")
