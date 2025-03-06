@@ -12,8 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   chatbotContainer.innerHTML = `
     <div id="chatbot-header">
-      <img src="/static/images/bunky.png" alt="Bunky" id="chatbot-icon" class="chatbot-minimized-icon">
-      <span id="chatbot-title">Bunky Chatbot</span>
+      <span id="chatbot-title">Bunker bot</span>
       <button id="chatbot-close">−</button>
     </div>
     <div id="chatbot-body"></div>
@@ -25,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   document.body.appendChild(chatbotContainer);
   chatbotContainer.classList.add('minimized');
-
 
   const style = document.createElement('style');
   style.innerHTML = `
@@ -51,7 +49,6 @@ document.addEventListener('DOMContentLoaded', function() {
       width: 100px;
       height: 100px;
       border-radius: 50%;
-      background: linear-gradient(135deg, #0b5577 0%, #2eac68 100%);
       padding: 8px;
     }
 
@@ -66,44 +63,22 @@ document.addEventListener('DOMContentLoaded', function() {
       display: none;
     }
 
-    #chatbot-container.minimized #chatbot-icon {
-      width: 80px;
-      height: 80px;
-      margin: 0;
-      filter: none;
-      transition: all 0.3s ease;
-    }
-
-    #chatbot-icon {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    #chatbot-container.minimized:hover #chatbot-icon {
-      transform: scale(1.1);
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-    }
-
     #chatbot-header {
-      background: linear-gradient(135deg, #0b5577 0%, #2eac68 100%);
-      color: white;
-      padding: 25px 15px 40px;
-      text-align: center;
-      font-size: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: relative;
-      min-height: 50px
-    }
+    background: #fff;
+    color: #0b5577;
+    padding: 15px 15px;
+    text-align: center;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    min-height: 40px;
+    width: 100%;
+  }
 
-    #chatbot-header::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, #0b5577 0%, #2eac68 100%);
+    #chatbot-title {
+      font-size: 18px;
     }
 
     #chatbot-icon {
@@ -114,12 +89,27 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     #chatbot-close {
-      background: none;
-      border: none;
+      position: absolute;
+      top: 20px;
+      right: 40px;
+      background: #0b5577;
       color: white;
-      font-size: 20px;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0px 2px 4px rgba(0,0,0,0.3);
+      font-size: 16px;
       cursor: pointer;
-      transition: transform 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    #chatbot-close:hover {
+      transform: scale(1.1);
+      box-shadow: 0px 4px 8px rgba(0,0,0,0.4);
     }
 
     #chatbot-close:hover {
@@ -128,32 +118,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     #chatbot-body {
       flex: 1;
-      padding: 15px;
+      padding: 30px;
       overflow-y: auto;
-      overflow-x: hidden;
       background: #f8fbfa;
       scrollbar-width: thin;
       scrollbar-color: #0b5577 #f8fbfa;
-    }
-
-    #chatbot-body::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    #chatbot-body::-webkit-scrollbar-track {
-      background: #f8fbfa;
-    }
-
-    #chatbot-body::-webkit-scrollbar-thumb {
-      background: #0b5577;
-      border-radius: 10px;
     }
 
     #chatbot-footer {
       display: flex;
       border-top: 2px solid #0b557710;
       padding: 15px;
-      background: #ffffff;
+      background: #f8fbfa;
     }
 
     #chatbot-input {
@@ -162,14 +138,7 @@ document.addEventListener('DOMContentLoaded', function() {
       border-radius: 25px;
       padding: 12px 20px;
       font-size: 14px;
-      transition: all 0.3s;
       background: #f8fbfa;
-    }
-
-    #chatbot-input:focus {
-      outline: none;
-      border-color: #2eac68;
-      box-shadow: 0 0 8px #2eac6830;
     }
 
     #chatbot-send {
@@ -180,70 +149,188 @@ document.addEventListener('DOMContentLoaded', function() {
       margin-left: 10px;
       border-radius: 25px;
       cursor: pointer;
-      transition: all 0.3s;
-      font-weight: 600;
-    }
-
-    #chatbot-send:hover {
-      background-color: #248c51;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(46, 172, 104, 0.3);
     }
 
     .message {
-      margin-bottom: 15px;
+      margin-bottom: 35px;
       padding: 12px 18px;
       border-radius: 15px;
-      max-width: 80%;
-      clear: both;
+      max-width: 70%;
       position: relative;
       line-height: 1.4;
+      display: flex;
+      align-items: center;
     }
 
     .message.user {
-      background: #0b5577;
-      color: white;
+      background: #d3d3d3;
+      color: black;
       float: right;
       border-bottom-right-radius: 5px;
+      padding-right: 60px;
+      margin-right: 60px;
+    }
+
+    .message.user::before {
+      content: "You";
+      position: absolute;
+      top: -25px;
+      right: 10px;
+      font-size: 0.8em;
+      color: #666;
+      font-weight: 500;
+      width: 100px;
+      text-align: right;
+    }
+
+    .message.user::after {
+      content: '';
+      background: url('/static/images/user.png') center/cover;
+      width: 45px;
+      height: 45px;
+      position: absolute;
+      right: -70px;
+      top: 0;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
 
     .message.bot {
-      background: #f0f7f4;
-      color: #0b5577;
+      background: #0b5577;
+      margin-left: 60px;
+      color: white;
       float: left;
       border-bottom-left-radius: 5px;
     }
 
     .message.bot::before {
       content: '';
+      background: url('/static/images/bunky.png') center/cover;
+      width: 45px;
+      height: 45px;
       position: absolute;
-      left: -8px;
+      left: -70px;
       top: 0;
-      border-width: 8px 8px 8px 0;
-      border-style: solid;
-      border-color: transparent #f0f7f4 transparent transparent;
+      border-radius: 50%;
+      border: 3px solid white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .message.bot::after {
+      content: "Bunker bot";
+      position: absolute;
+      top: -25px;
+      left: 10px;
+      font-size: 0.8em;
+      color: #666;
+      font-weight: 500;
+      width: 140px;
+    }
+
+
+    #chatbot-body {
+      padding: 15px 10px 15px 20px
+      overflow-x: hidden
+    }
+
+    .message.bot .bot-info {
+      display: flex;
+      align-items: center;
+    }
+
+    .message.bot .bot-info img {
+      width: 30px;
+      height: 30px;
+      margin-right: 8px;
+    }
+
+    .message.bot .bot-info span {
+      font-size: 16px;
+      color: #0b5577;
+    }
+
+    #chatbot-container.minimized {
+      width: 80px; /* Taille ajustée */
+      height: 80px;
+      border-radius: 50%;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white; /* Fond blanc ou transparent */
+    }
+
+    #chatbot-container.minimized #chatbot-header,
+    #chatbot-container.minimized #chatbot-body,
+    #chatbot-container.minimized #chatbot-footer {
+      display: none;
+    }
+
+    #chatbot-container.minimized::before {
+      content: "";
+      background: url('/static/images/bunky.png') center/cover;
+      width: 70px;  /* Ajuste la taille de l'image */
+      height: 70px;
+      border-radius: 50%;
     }
 
   `;
   document.head.appendChild(style);
 
-  // Sélection des éléments
+  function minimizeChatbot() {
+    const chatbot = document.getElementById("chatbot");
+    chatbot.classList.add("chatbot-minimized");
+  }
+  
+  function maximizeChatbot() {
+    const chatbot = document.getElementById("chatbot");
+    chatbot.classList.remove("chatbot-minimized");
+  }
+  
+
+  // Messages with images
+  function addBotMessage(messageText) {
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('message', 'bot');
+
+    messageElement.innerHTML = `
+      <div class="bot-info">
+        <img src="/static/images/bunky.png" alt="Bunky" class="bot-icon">
+        <span>Bunker Bot</span>
+      </div>
+      <p>${messageText}</p>
+    `;
+
+    document.querySelector('#chatbot-body').appendChild(messageElement);
+  }
+
   const input = document.getElementById('chatbot-input');
   const sendBtn = document.getElementById('chatbot-send');
   const chatBody = document.getElementById('chatbot-body');
   const closeBtn = document.getElementById('chatbot-close');
   let isWaitingForResponse = false;
 
-  // Fonction d'affichage des messages
+  // Messages display
   function displayMessage(content, sender) {
-    const messageDiv = document.createElement('div');
-    messageDiv.classList.add('message', sender);
-    messageDiv.textContent = content;
-    chatBody.appendChild(messageDiv);
-    chatBody.scrollTop = chatBody.scrollHeight;
+      const messageDiv = document.createElement('div');
+      messageDiv.classList.add('message', sender);
+      
+      if(sender === 'bot') {
+          messageDiv.innerHTML = `
+              <div class="bot-content">
+                  <p>${content}</p>
+              </div>
+          `;
+      } else {
+          messageDiv.textContent = content;
+      }
+      
+      chatBody.appendChild(messageDiv);
+      chatBody.scrollTop = chatBody.scrollHeight;
   }
 
-  function disableChatInput(message = "Session terminée") {
+  function disableChatInput(message = "Session expired.") {
     input.disabled = true;
     sendBtn.disabled = true;
     input.placeholder = message;
@@ -251,7 +338,7 @@ document.addEventListener('DOMContentLoaded', function() {
     sendBtn.style.backgroundColor = "#cccccc";
 }
   
-  // Fonction d'envoi de message
+  // Messages sending
   async function checkSessionLimits(threadId) {
     try {
         const response = await fetch(`${API_SESSION_STATUS}?thread_id=${threadId}`);
@@ -284,7 +371,7 @@ async function sendMessage(message) {
         let threadId = localStorage.getItem('thread_id');
         let isNewThread = false;
 
-        // Vérification initiale de la session
+        // Session checking
         if (threadId) {
             const statusResponse = await fetch(`${API_SESSION_STATUS}?thread_id=${threadId}`);
             if (!statusResponse.ok) throw new Error('Erreur vérification session');
@@ -313,17 +400,17 @@ async function sendMessage(message) {
             body: JSON.stringify({ message, thread_id: threadId })
         });
 
-        // Gestion des réponses d'erreur
+        // Error handler
         if (!response.ok) {
             const data = await response.json();
             
-            // Cas spécifique: message trop long
+            // Too long
             if (response.status === 400 && data.type === 'message_length') {
                 displayMessage(data.error, 'bot');
-                return; // On sort sans désactiver le chat
+                return; 
             }
-            // Cas général des autres erreurs
-            if (response.status === 403) { // Session expirée
+            // Global other errors
+            if (response.status === 403) { 
                 disableChatInput(data.error);
                 localStorage.removeItem('thread_id');
                 displayMessage(data.error, 'bot');
@@ -355,12 +442,12 @@ async function loadHistory() {
 
   try {
       const statusResponse = await fetch(`${API_SESSION_STATUS}?thread_id=${threadId}`);
-      if (!statusResponse.ok) throw new Error('Session invalide');
+      if (!statusResponse.ok) throw new Error('Session unvalide');
       
       const { remaining_time, remaining_chars } = await statusResponse.json();
       
       if (remaining_time <= 0 || remaining_chars <= 0) {
-          disableChatInput("Session expirée");
+          disableChatInput("Session expired");
           localStorage.removeItem('thread_id');
           return;
       }
@@ -373,14 +460,14 @@ async function loadHistory() {
       
       checkSessionLimits(threadId);
   } catch (error) {
-      disableChatInput("Session invalide");
+      disableChatInput("Session not valide");
       localStorage.removeItem('thread_id');
   }
 }
 
   loadHistory();
 
-  // Gestionnaires d'événements
+  // Event handler
   sendBtn.addEventListener('click', () => {
     if (isWaitingForResponse) return;
     const userMessage = input.value.trim();
@@ -400,7 +487,7 @@ async function loadHistory() {
     }
   });
 
-  // Gestion de la minimisation
+  // Minimize handler
   closeBtn.addEventListener('click', (event) => {
     chatbotContainer.classList.toggle('minimized');
     event.stopPropagation();
@@ -412,11 +499,11 @@ async function loadHistory() {
     }
   });
 
-  // Message de bienvenue
+  // Welcome message
   displayMessage('Hello, I am Bunky, your personal assistant for BunkerWeb ! How can i help you today?', 'bot');
   chatbotContainer.classList.add('minimized');
 
-  function disableChatInput(message = "Session terminée") {
+  function disableChatInput(message = "Session expired.") {
     input.disabled = true;
     sendBtn.disabled = true;
     input.placeholder = message;

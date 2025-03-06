@@ -1,11 +1,13 @@
 document.addEventListener('DOMContentLoaded', function () {
     let messagesPerHourChartInstance = null;
+    let threadsChart = null;
+    let messagesChart = null;
 
-    // Fonction pour récupérer les stats des 24 dernières heures
+    // last 24 houres fetch
     fetch('/admin/messages/last_24h')
     .then(response => response.json())
     .then(data => {
-        // Récupérer et afficher les statistiques des dernières 24h
+        // Display last 24H data
         document.getElementById('threads-24h').textContent = data.threads_count;
         document.getElementById('messages-24h').textContent = data.messages_count;
     })
@@ -20,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
     .catch(error => console.error('Error fetching total stats:', error));
 
 
-    // Graphique des threads et messages par jour
+    // Graph thread and messages / day
     fetch('/admin/messages/threads_per_day')
         .then(response => response.json())
         .then(data => {
@@ -31,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const threadCounts = threadsData.map(item => item.thread_count);
             const messageCounts = messagesData.map(item => item.message_count);
 
-            // Graphique des threads par jour
+            // Thread / day
             const ctxThreads = document.getElementById('threadsPerDayChart').getContext('2d');
             new Chart(ctxThreads, {
                 type: 'bar',
@@ -58,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            // Graphique des messages par jour
+            // Messages / day
             const ctxMessages = document.getElementById('messagesPerDayChart').getContext('2d');
             new Chart(ctxMessages, {
                 type: 'bar',
@@ -87,30 +89,28 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .catch(error => console.error('Error fetching threads and messages per day stats:', error));
 
-    // Graphique des messages moyens par heure
+    // Average messages / houre
     const daysSelect = document.getElementById('days-select');
     daysSelect.addEventListener('change', function () {
         const days = daysSelect.value;
 
-        // Détruire le graphique précédent si il existe déjà
         if (messagesPerHourChartInstance) {
             messagesPerHourChartInstance.destroy();
         }
 
-        // Récupérer les données avec la valeur correcte de 'days'
         fetch(`/admin/messages/messages_per_hour?days=${days}`)
             .then(response => response.json())
             .then(data => {
-                const hours = Array.from({ length: 24 }, (_, i) => i); // Créer un tableau de 0 à 23 pour les heures
-                const messageCounts = new Array(24).fill(0); // Initialiser le tableau avec des 0
+                const hours = Array.from({ length: 24 }, (_, i) => i);
+                const messageCounts = new Array(24).fill(0);
 
                 data.forEach(item => {
                     messageCounts[item.hour] = item.message_count;
                 });
 
-                // Calculer la moyenne des messages par heure
+                // Calculate average message / houre
                 const averageMessageCounts = messageCounts.map(count => {
-                    return count / days; // Diviser par le nombre de jours pour obtenir la moyenne
+                    return count / days;
                 });
 
                 const ctx = document.getElementById('messagesPerHourChart').getContext('2d');
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .catch(error => console.error('Error fetching messages per hour stats:', error));
     });
 
-    // Charger par défaut les données des 7 derniers jours
+    // Default charging 7 last days
     fetch(`/admin/messages/messages_per_hour?days=7`)
         .then(response => response.json())
         .then(data => {
@@ -153,9 +153,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 messageCounts[item.hour] = item.message_count;
             });
 
-            // Calculer la moyenne des messages par heure
             const averageMessageCounts = messageCounts.map(count => {
-                return count / 7; // Diviser par 7 pour obtenir la moyenne sur 7 jours
+                return count / 7;
             });
 
             const ctx = document.getElementById('messagesPerHourChart').getContext('2d');
@@ -185,4 +184,46 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         })
         .catch(error => console.error('Error fetching messages per hour stats:', error));
+
+
+        document.getElementById('days-select-threads').addEventListener('change', function () {
+            const days = this.value;
+            fetch(`/admin/messages/threads_per_day?days=${days}`)
+                .then(response => response.json())
+                .then(data => {
+                    const dates = data.threads_data.map(item => item.date);
+                    const threadCounts = data.threads_data.map(item => item.thread_count);
+                    
+                    console.log("Threads par jour:", dates, threadCounts);
+
+                    if (typeof threadsChart !== 'undefined') {
+                        threadsChart.data.labels = dates;
+                        threadsChart.data.datasets[0].data = threadCounts;
+                        threadsChart.update();
+                    }
+                })
+                .catch(error => console.error('Erreur chargement threads:', error));
+        });
+        
+        document.getElementById('days-select-messages').addEventListener('change', function () {
+            const days = this.value;
+            fetch(`/admin/messages/messages_per_hour?days=${days}`)
+                .then(response => response.json())
+                .then(data => {
+                    const messageCounts = new Array(24).fill(0);
+                    data.forEach(item => {
+                        messageCounts[item.hour] = item.message_count;
+                    });
+                    
+                    const avgMessageCounts = messageCounts.map(count => count / days);
+                    console.log("Moyenne messages par heure:", avgMessageCounts);
+        
+                    if (messagesPerHourChartInstance) {
+                        messagesPerHourChartInstance.data.datasets[0].data = avgMessageCounts;
+                        messagesPerHourChartInstance.update();
+                    }
+                })
+                .catch(error => console.error('Erreur chargement messages:', error));
+        });
+        
 });

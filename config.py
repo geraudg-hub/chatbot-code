@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()  # Charger les variables depuis le fichier .env
+load_dotenv()
 
 class Config:
     BASIC_AUTH_USERNAME = os.getenv('BASIC_AUTH_USERNAME')

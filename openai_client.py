@@ -1,4 +1,5 @@
 import os
+import time
 from openai import AzureOpenAI
 from dotenv import load_dotenv
 
@@ -10,59 +11,58 @@ client = AzureOpenAI(
     api_version="2024-05-01-preview"
 )
 
-# Récupération de l'assistant
 assistant_id = os.getenv("AZURE_OPENAI_ASSISTANT_ID")
-assistant = client.beta.assistants.retrieve(assistant_id)
-print("Assistant connecté")
 
 def create_new_thread():
     try:
-        # Création d'un thread pour stocker la conversation
         thread = client.beta.threads.create()
         return str(thread.id)
-    
     except Exception as e:
-        print(f"Erreur lors de la creation du thread : {str(e)}")
+        print(f"Erreur création thread : {str(e)}")
         return None
 
-
 def bot_response(user_message, thread_id):
-    if not client or not assistant:
-        return "Erreur : Client OpenAI ou Assistant non initialisé."
-
     try:
-        # Étape 2 : Ajouter le message utilisateur au thread
+        # Adding user message
         client.beta.threads.messages.create(
             thread_id=thread_id,
             role="user",
-            content=user_message
+            content=user_message[:5000]
         )
 
-        # Étape 3 : Lancer l'exécution de l'assistant sur ce thread
+        # Run with timeout creation
         run = client.beta.threads.runs.create(
             thread_id=thread_id,
-            assistant_id=assistant.id
+            assistant_id=assistant_id,
+            timeout=30
         )
 
-        # Attendre que l'exécution se termine
-        while run.status in ["queued", "in_progress"]:
-            run = client.beta.threads.runs.retrieve(
-                thread_id=thread_id, run_id=run.id
+        # Checking with exponential backoff
+        start_time = time.time()
+        while True:
+            run_status = client.beta.threads.runs.retrieve(
+                thread_id=thread_id, 
+                run_id=run.id,
+                timeout=10
             )
+            
+            if run_status.status == "completed":
+                break
+                
+            if run_status.status in ["failed", "cancelled", "expired"]:
+                return f"Erreur OpenAI: {run_status.last_error}"
+                
+            if time.time() - start_time > 30: 
+                return "Erreur: Timeout de l'API OpenAI"
+            
+            time.sleep(1)
 
-        # Vérifier si l'exécution a réussi
-        if run.status == "completed":
-            # Étape 4 : Récupérer la réponse de l'assistant
-            messages = client.beta.threads.messages.list(thread_id=thread_id)
-            return messages.data[0].content[0].text.value
-        else:
-            return f"Erreur : l'exécution a échoué avec le statut {run.status}"
+        # Recieving answer
+        messages = client.beta.threads.messages.list(
+            thread_id=thread_id, 
+            timeout=10
+        )
+        return messages.data[0].content[0].text.value
 
     except Exception as e:
-        return f"Erreur : {str(e)}"
-
-
-# Exemple d'utilisation
-if __name__ == "__main__":
-    user_message = "Bonjour, peux-tu me donner un résumé de ton contexte ?"
-    print(bot_response(user_message))
+        return f"Erreur: {str(e)}"

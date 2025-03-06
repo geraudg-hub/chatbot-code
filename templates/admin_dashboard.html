@@ -16,23 +16,21 @@
     table.dataTable thead th {
       white-space: nowrap;
     }
-    /* Limite la hauteur du texte dans la colonne "Dernier message" */
     #threadsTable td:last-child {
-      max-width: 300px; /* Limite la largeur de la colonne */
-      white-space: nowrap; /* Empêche les retours à la ligne */
-      overflow: hidden; /* Cache le texte excédentaire */
-      text-overflow: ellipsis; /* Ajoute des points de suspension */
-    }
-        /* Réduit la largeur de la colonne "Titre" */
-    #threadsTable th:nth-child(2), 
-    #threadsTable td:nth-child(2) {
-      width: 200px; /* Ajuste la largeur de la colonne Titre */
+      max-width: 300px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    /* Augmente la largeur de la colonne "Dernier message" */
+    #threadsTable th:nth-child(2), 
+    #threadsTable td:nth-child(2) {
+      width: 200px; 
+    }
+
     #threadsTable th:nth-child(5), 
     #threadsTable td:nth-child(5) {
-      width: 300px; /* Ajuste la largeur de la colonne Dernier message */
+      width: 300px;
     }
 
 
@@ -40,7 +38,6 @@
 </head>
 <body>
   
-  <!-- Ici on charge dynamiquement le header -->
   {% include "header.html" %}
 
   <div class="container my-4">
@@ -48,7 +45,7 @@
       <h1>Tableau de bord - Admin Chatbot</h1>
     </header>
 
-    <!-- Table de Threads -->
+    <!-- Table of Threads -->
     <section id="threads">
       <h2 class="section-title">Liste des Threads</h2>
       <table id="threadsTable" class="display table table-striped">
@@ -63,7 +60,6 @@
           </tr>
         </thead>
         <tbody>
-          <!-- DataTables chargera dynamiquement les données -->
         </tbody>
       </table>
     </section>
@@ -75,7 +71,7 @@
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <!-- Bootstrap Bundle JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Votre script admin.js, servi depuis le dossier static/js -->
+  <!-- Script admin.js -->
   <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 
 </body>

@@ -18,12 +18,14 @@ def get_messages_by_thread(thread_id):
                            .all()
     
     return jsonify([{
+        "message_id": message.id, 
         "content": message.content,
         "origin": message.origin,
-        "created_at": message.created_at.isoformat()
+        "created_at": message.created_at.isoformat(),
+        "timestamp": message.created_at
     } for message in messages])
 
-# Route pour afficher le tableau de bord d'administration
+# Admin dashboard
 @admin_bp.route('/', methods=['GET'])
 @basic_auth.required
 def admin_dashboard():
@@ -33,7 +35,6 @@ def admin_dashboard():
 @admin_bp.route('/messages/total', methods=['GET'])
 @basic_auth.required
 def get_total_stats():
-    # Récupérer le total des threads et des messages
     total_threads = Thread.query.count()
     total_messages = Message.query.count()
 
@@ -43,14 +44,14 @@ def get_total_stats():
     })
 
 
-# Route pour récupérer les threads
+# Retrieving threads
 @admin_bp.route('/threads', methods=['GET'])
 @basic_auth.required
 def get_threads():
     threads = Thread.query.all()
     data = []
     for thread in threads:
-        messages = thread.messages  # via la relation définie
+        messages = thread.messages
         message_count = len(messages)
         last_message = messages[-2].content if len(messages) > 1 else messages[0].content if messages else "Aucun"  
         created_at = thread.created_at.isoformat() if thread.created_at else ""
@@ -64,20 +65,8 @@ def get_threads():
         })
     return jsonify(data)
 
-# Route pour récupérer les messages d'un thread
-@admin_bp.route('/thread/<string:thread_id>/messages', methods=['GET'], endpoint='get_thread_messages')
-@basic_auth.required
-def get_messages_by_thread(thread_id):
-    thread = Thread.query.get_or_404(thread_id)
-    messages = Message.query.filter_by(thread_id=thread_id).all()
-    return jsonify([{
-        "message_id": message.id,
-        "content": message.content,
-        "timestamp": message.created_at,
-        "origin": message.origin,
-    } for message in messages])
 
-# Route pour récupérer les statistiques des messages par jour
+# Messages / day
 @admin_bp.route('/messages/stats', methods=['GET'])
 @basic_auth.required
 def get_message_stats():
@@ -85,11 +74,11 @@ def get_message_stats():
         .group_by(func.date(Message.created_at))\
         .all()
     return jsonify([{
-        "date": stat[0].isoformat(),  # Utilise isoformat() pour un format ISO 8601
+        "date": stat[0].isoformat(),
         "message_count": stat[1]
     } for stat in stats])
 
-# Route pour récupérer les heures de pointe
+# Messages / houres
 @admin_bp.route('/messages/peak_hours', methods=['GET'])
 @basic_auth.required
 def get_peak_hours():
@@ -98,7 +87,7 @@ def get_peak_hours():
         .all()
     return jsonify([{"hour": stat[0], "message_count": stat[1]} for stat in stats])
 
-# Route pour récupérer les statistiques des dernières 24 heures
+# Last 24h
 @admin_bp.route('/messages/last_24h', methods=['GET'])
 @basic_auth.required
 def get_last_24h_stats():
@@ -113,7 +102,7 @@ def get_last_24h_stats():
         "messages_count": messages_count
     })
 
-# Route pour récupérer les threads et messages par jour avec une période paramétrée
+# Thread & messages / x days
 @admin_bp.route('/messages/threads_per_day', methods=['GET'])
 @basic_auth.required
 def get_threads_and_messages_per_day():
@@ -121,7 +110,6 @@ def get_threads_and_messages_per_day():
     days = int(request.args.get('days', 7))
     start_date = datetime.utcnow() - timedelta(days=days)
 
-    # Récupérer les threads et messages pour les derniers `days` jours
     thread_data = db.session.query(
         func.date(Thread.created_at).label('date'),
         func.count(Thread.id).label('thread_count')
@@ -138,11 +126,11 @@ def get_threads_and_messages_per_day():
     })
 
 
-# Route pour récupérer les messages moyens par heure
+# Average message / houre
 @admin_bp.route('/messages/messages_per_hour', methods=['GET'])
 @basic_auth.required
 def get_messages_per_hour():
-    days = int(request.args.get('days', 7))  # 7 jours par défaut
+    days = int(request.args.get('days', 7))  # 7 default
     now = datetime.utcnow()
     start_date = now - timedelta(days=days)
 
@@ -155,13 +143,13 @@ def get_messages_per_hour():
 
     return jsonify(hourly_data)
 
-# Route pour afficher les messages d'un thread
+# Show message of thread
 @admin_bp.route('/thread/<string:thread_id>/messages/view', methods=['GET'])
 @basic_auth.required
 def view_messages(thread_id):
     return render_template('messages.html', thread_id=thread_id)
 
-# Route pour afficher la page des statistiques
+# Stats page
 @admin_bp.route('/statistiques', methods=['GET'])
 @basic_auth.required
 def statistiques():

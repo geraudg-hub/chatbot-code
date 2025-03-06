@@ -1,13 +1,13 @@
 FROM python:3.12-alpine
 
-# Créer un utilisateur non-root
+# Create non-root user
 RUN adduser -h /opt/app -D -u 5000 www
 
-# Installer les dépendances
+# Dependencies
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt && rm -f /tmp/requirements.txt
 
-# Copier les fichiers sources
+# Copy sources
 COPY *.py /opt/app
 COPY openai_client.py /opt/app
 COPY templates /opt/app/templates
@@ -16,14 +16,14 @@ COPY routes /opt/app/routes
 COPY models /opt/app/models
 COPY migrations /opt/app/migrations
 
-# Copier le script d'entrée
+# Copier script
 COPY entrypoint.sh /opt/app/entrypoint.sh
 RUN chmod +x /opt/app/entrypoint.sh
 
-# Exposer le port 5000
+# Expose port 5000
 EXPOSE 5000
 
-# Point d'entrée
+# Entry point
 USER www
 WORKDIR /opt/app
 ENTRYPOINT ["/bin/sh", "/opt/app/entrypoint.sh"]

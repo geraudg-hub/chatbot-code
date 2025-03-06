@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     const threadId = document.getElementById("chatbox").dataset.threadId;
 
-    // Charger les messages depuis l'API
+    // Charging messages from API
     async function fetchMessages() {
         try {
             const response = await fetch(`/admin/thread/${threadId}/messages`);
@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 displayMessage(message.content, message.origin);
             });
 
-            // Faire défiler vers le bas
+            // Scroll
             const chatbox = document.getElementById('chatbox');
             chatbox.scrollTop = chatbox.scrollHeight;
         } catch (error) {
