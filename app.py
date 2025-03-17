@@ -83,6 +83,17 @@ conversations = {}
 # Path for html template
 template_name = "test.html"
 
+# Path for user history
+@app.route('/thread/<string:thread_id>/messages', methods=['GET'])
+def get_thread_messages(thread_id):
+    messages = Message.query.filter_by(thread_id=thread_id).order_by(Message.created_at.asc()).all()
+    return jsonify([{
+        "content": message.content,
+        "origin": message.origin,
+        "created_at": message.created_at.isoformat()
+    } for message in messages])
+
+
 @app.route('/test')
 def test():
     return render_template(template_name)
@@ -152,8 +163,8 @@ def chat():
         
         # JSON format checking
         if not request.is_json:
-            logger.warning("Requête without Content-Type: application/json")
-            return jsonify({"error": "Invalide request format"}), 400
+            logger.error("Requête reçue avec un format non JSON")
+            return jsonify({"error": "Internal server error"}), 500
             
         data = request.get_json()
         thread_id = data.get("thread_id")
@@ -204,11 +215,11 @@ def chat():
             return jsonify({"error": "Session verification error"}), 500
 
         # [6] Characteres limite checking before use
-        if total_chars + len(user_message) > MAX_CHARACTERS:
-            logger.warning(f"Max characteres exeeded {thread_id}")
-            thread.status = 'expired'
-            db.session.commit()
-            return jsonify({"error": "Max characteres exeeded"}), 403
+        if len(user_message) > MAX_MESSAGE_CHARACTERS:
+            logger.error(f"User message too long ({len(user_message)} caracteres)")
+            return jsonify({
+                "error": f"Message trop long ({len(user_message)}/{MAX_MESSAGE_CHARACTERS} caracteres)"
+            }), 
 
         # [7] Registering user message
         try:
@@ -250,7 +261,7 @@ def chat():
         try:
             bot_message_db = Message(
                 thread_id=thread.id,
-                content=bot_reply[:MAX_MESSAGE_CHARACTERS],
+                content=bot_reply,
                 origin="bot"
             )
             db.session.add(bot_message_db)

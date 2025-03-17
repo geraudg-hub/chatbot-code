@@ -275,14 +275,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         #chatbot-container.minimized {
-          width: 80px; /* Taille ajustée */
+          width: 80px; 
           height: 80px;
           border-radius: 50%;
           padding: 0;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: white; /* Fond blanc ou transparent */
+          background: white; 
         }
 
         #chatbot-container.minimized #chatbot-header,
@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function() {
         #chatbot-container.minimized::before {
           content: "";
           background: url('/static/images/bunky.png') center/cover;
-          width: 70px;  /* Ajuste la taille de l'image */
+          width: 70px; 
           height: 70px;
           border-radius: 50%;
           transition: transform 0.3s ease;
@@ -372,7 +372,14 @@ document.addEventListener('DOMContentLoaded', function() {
             border: 1px solid #0b5577;
             border-radius: 4px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            min-width: 32px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: transparent;
         }
 
         .copy-code-btn:hover {
@@ -382,23 +389,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         .copy-code-btn.copied {
-            background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMDBjYzAwIj48cGF0aCBkPSJNOSAxNi4yTDQuOCAxMmwtMS40IDEuNEw5IDE5IDIxIDdsLTEuNC0xLjRMOSAxNi4yeiIvPjwvc3ZnPg==");
-        }
+            background-image: none !important;
+            min-width: 80px;
+            color: #0b5577;
+            background-color: rgba(255, 255, 255, 0.9);
+       }
 
-        .copy-code-btn:hover::after {
-            content: "Copy to clipboard";
-            position: absolute;
-            top: -35px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #0b5577;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            white-space: nowrap;
-            font-family: Arial, sans-serif;
-        }
+        .copy-code-btn.copied::after {
+              content: "✓ Copied!";
+              position: static;
+              transform: none;
+              background: transparent;
+              color: black;
+              padding: 0;
+              box-shadow: none;
+              font-weight: bold;
+          }
 
         .typing-indicator {
           display: inline-flex;
@@ -494,19 +500,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 pre.appendChild(copyButton);
     
-                copyButton.addEventListener('click', () => {
-                    const code = pre.querySelector('code').innerText;
-                    navigator.clipboard.writeText(code)
+                copyButton.addEventListener('click', (e) => {
+                  const codeElement = pre.querySelector('code');
+                  if (!codeElement) return;
+              
+                  const code = codeElement.innerText;
+                  const target = e.currentTarget;
+              
+                  navigator.clipboard.writeText(code)
                       .then(() => {
-                          e.target.classList.add('copied');
-                          setTimeout(() => {
-                              e.target.classList.remove('copied');
-                          }, 2000);
+                          if (document.body.contains(target)) {
+                              target.classList.add('copied');
+                              setTimeout(() => {
+                                  if (document.body.contains(target)) {
+                                      target.classList.remove('copied');
+                                  }
+                              }, 2000);
+                          }
                       })
                       .catch(err => {
-                          console.error('Erreur de copie:', err);
+                          console.error('Erreur de copie :', err);
+                          target.classList.add('copied-error');
+                          setTimeout(() => target.classList.remove('copied-error'), 2000);
                       });
-                });
+              });
             });
         }
     }
@@ -545,20 +562,31 @@ document.addEventListener('DOMContentLoaded', function() {
       async function checkSessionLimits(threadId) {
         try {
             const response = await fetch(`${API_SESSION_STATUS}?thread_id=${threadId}`);
-            if (!response.ok) throw new Error('Erreur de statut');
+            
+            // Checking content-type
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const errorText = await response.text();
+                throw new Error('Internal server error');
+            }
+    
+            if (!response.ok) throw new Error('Status error');
             
             const { remaining_time, remaining_chars, expired } = await response.json();
             
             if (expired) {
-                disableChatInput("Session expirée");
+                disableChatInput("Session expired");
                 localStorage.removeItem('thread_id');
                 displayMessage("Session expired.", 'bot');
-                return;
             }
-
+    
         } catch (error) {
-            console.error('Erreur vérification session:', error);
-            displayMessage('Impossible de vérifier le statut de la session', 'bot');
+            if (error instanceof SyntaxError || error.message === 'Internal server error') {
+                displayMessage('Internal server error', 'bot');
+            } else {
+                console.error('Session check error:', error);
+                displayMessage('Unable to check session status', 'bot');
+            }
         }
     }
 
@@ -578,12 +606,12 @@ document.addEventListener('DOMContentLoaded', function() {
   
           if (threadId) {
               const statusResponse = await fetch(`${API_SESSION_STATUS}?thread_id=${threadId}`);
-              if (!statusResponse.ok) throw new Error('Erreur vérification session');
+              if (!statusResponse.ok) throw new Error('Session checking error');
               
               const { remaining_time, remaining_chars } = await statusResponse.json();
               
               if (remaining_time <= 0 || remaining_chars <= 0) {
-                  disableChatInput("Session expirée - Veuillez recharger");
+                  disableChatInput("Session expired - Please refresh");
                   localStorage.removeItem('thread_id');
                   displayMessage("Session expired.", 'bot');
                   return;
@@ -603,6 +631,12 @@ document.addEventListener('DOMContentLoaded', function() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ message, thread_id: threadId })
           });
+
+          const contentType = response.headers.get('content-type');
+          if (!contentType || !contentType.includes('application/json')) {
+              const errorText = await response.text();
+              throw new Error('Internal server error');
+          }
   
           if (!response.ok) {
               const data = await response.json();
@@ -619,7 +653,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   return;
               }
               
-              throw new Error(data.error || 'Erreur inconnue');
+              throw new Error(data.error || 'Unknown error');
           }
   
           const data = await response.json();
@@ -628,13 +662,17 @@ document.addEventListener('DOMContentLoaded', function() {
           
           if (!isNewThread) await checkSessionLimits(threadId);
   
-      } catch (error) {
-          console.error('Erreur:', error);
-          displayMessage(`Erreur : ${error.message}`, 'bot');
-          
-          if (error.message.includes('expirée') || error.message.includes('dépassée')) {
-              disableChatInput(error.message);
-              localStorage.removeItem('thread_id');
+        } catch (error) {
+          if (error instanceof SyntaxError || error.message === 'Internal server error') {
+              displayMessage('Internal server error', 'bot');
+          } else {
+              console.error('Error:', error);
+              displayMessage(`Error: ${error.message}`, 'bot');
+              
+              if (error.message.includes('expired') || error.message.includes('exceeded')) {
+                  disableChatInput(error.message);
+                  localStorage.removeItem('thread_id');
+              }
           }
       } finally {
           if (typingIndicator) {
@@ -646,36 +684,41 @@ document.addEventListener('DOMContentLoaded', function() {
       }
   }
 
-    async function loadHistory() {
-      const threadId = localStorage.getItem('thread_id');
-      if (!threadId) return;
+      async function loadHistory() {
+        const threadId = localStorage.getItem('thread_id');
+        if (!threadId) return;
 
-      try {
-          const statusResponse = await fetch(`${API_SESSION_STATUS}?thread_id=${threadId}`);
-          if (!statusResponse.ok) throw new Error('Session unvalide');
-          
-          const { remaining_time, remaining_chars } = await statusResponse.json();
-          
-          if (remaining_time <= 0 || remaining_chars <= 0) {
-              disableChatInput("Session expired");
-              localStorage.removeItem('thread_id');
-              return;
-          }
+        try {
+            const response = await fetch(`/thread/${threadId}/messages`);           
+            // Checking content-type
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const errorText = await response.text();
+                throw new Error('Internal server error');
+            }
 
-          const response = await fetch(`/admin/thread/${threadId}/messages`);
-          if (!response.ok) return;
-          
-          const messages = await response.json();
-          messages.forEach(msg => displayMessage(msg.content, msg.origin));
-          
-          checkSessionLimits(threadId);
-      } catch (error) {
-          disableChatInput("Session not valide");
-          localStorage.removeItem('thread_id');
-      }
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    localStorage.removeItem('thread_id');
+                    disableChatInput("Invalid session");
+                }
+                return;
+            }
+            
+            const messages = await response.json();
+            messages.forEach(msg => displayMessage(msg.content, msg.origin));
+            
+        } catch (error) {
+            if (error instanceof SyntaxError || error.message === 'Internal server error') {
+                displayMessage('Internal server error', 'bot');
+            } else {
+                console.error('History load error:', error);
+                disableChatInput("Connection error");
+            }
+        }
     }
 
-      loadHistory();
+    loadHistory();
 
       // Event handler
       sendBtn.addEventListener('click', () => {
