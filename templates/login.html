@@ -24,6 +24,17 @@
             background-color: #093d54;
             border-color: #093d54;
         }
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .custom-hr {
+            width: 60%;
+            margin: 1.5rem auto;
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body>
@@ -32,11 +43,15 @@
     <div class="row gy-4 align-items-center">
       <div class="col-12 col-md-6 col-xl-7">
         <div class="d-flex justify-content-center text-white">
-          <div class="col-12 col-xl-9">
-            <img class="img-fluid rounded mb-4" loading="lazy" src="/static/images/BunkerWeb_logo_blanc.png" width="400" height="auto" alt="Logo">
-            <hr class="border-white mb-4">
-            <h2 class="h1 mb-4 text-white">Try BunkerBot beta now</h2>
-            <p class="lead mb-5 text-white-50">BunkerBot is your AI powered assistant to assist you in using BunkerWeb, the open-source and cloud-native Web Application Firewall (WAF)</p>
+          <div class="col-12 col-xl-9 logo-container">
+            <img class="img-fluid rounded mb-4 mx-auto" loading="lazy" 
+                 src="/static/images/BunkerWeb_logo_blanc.png" 
+                 width="400" 
+                 height="auto" 
+                 alt="Logo">
+            <hr class="border-white mb-4 custom-hr">
+            <h2 class="h1 mb-4 text-white w-100">Try BunkerBot beta now</h2>
+            <p class="lead mb-5 text-white-50 w-100">BunkerBot is your AI powered assistant to assist you in using BunkerWeb, the open-source and cloud-native Web Application Firewall (WAF)</p>
           </div>
         </div>
       </div>
@@ -57,7 +72,7 @@
                             {% endfor %}
                         {% endif %}
                     {% endwith %}
-                </div>
+                  </div>
                 </div>
               </div>
             </div>

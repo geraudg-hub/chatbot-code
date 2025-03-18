@@ -22,7 +22,7 @@ load_dotenv()
 MAX_SESSION_DURATION = int(os.getenv('MAX_SESSION_DURATION', 6000))
 MAX_CHARACTERS = int(os.getenv('MAX_CHARACTERS', 20000))
 MAX_MESSAGE_CHARACTERS = int(os.getenv('MAX_MESSAGE_CHARACTERS', 5000))
-BETA_PASSWORD = os.getenv('BETA_PASSWORD')
+BETA_PASSWORD = os.getenv('BETA_PASSWORD', "ilovebeer1234")
 
 # Specific BetaAuth class
 class BetaAuthHelper:
@@ -127,7 +127,7 @@ def login():
                     next_url = None
                 return redirect(next_url or url_for('home'))
             
-            flash('Unauthorized acces', 'danger')
+            flash('Unauthorized access', 'danger')
         except Exception as e:
             logger.error(f"Login error: {str(e)}", exc_info=True)
             flash('Technical issue in connexion', 'danger')
