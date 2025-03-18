@@ -2,7 +2,7 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 import time
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
 from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -15,12 +15,28 @@ from flask_basicauth import BasicAuth
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from sqlalchemy import func
+from functools import wraps
 
 # Charging env values
 load_dotenv()
 MAX_SESSION_DURATION = int(os.getenv('MAX_SESSION_DURATION', 6000))
 MAX_CHARACTERS = int(os.getenv('MAX_CHARACTERS', 20000))
 MAX_MESSAGE_CHARACTERS = int(os.getenv('MAX_MESSAGE_CHARACTERS', 5000))
+BETA_PASSWORD = os.getenv('BETA_PASSWORD')
+
+# Specific BetaAuth class
+class BetaAuthHelper:
+    @property
+    def session_timeout(self):
+        return timedelta(seconds=MAX_SESSION_DURATION)
+    
+    def is_valid_password(self, input_password):
+        return input_password == BETA_PASSWORD
+    
+    def validate_message(self, message):
+        return len(message) <= MAX_MESSAGE_CHARACTERS
+
+beta_helper = BetaAuthHelper()
 
 # Logging config
 logging.basicConfig(
@@ -43,6 +59,7 @@ if os.getenv('FLASK_ENV') == 'production':
 
 # Initialize Flask
 app = Flask(__name__)
+app.secret_key = os.environ.get('SECRET_KEY') or os.urandom(24).hex()
 
 # Configuration of database
 class Config:
@@ -53,14 +70,12 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 
 app.config.from_object(Config)
-
 app.config['BASIC_AUTH_USERNAME'] = os.getenv('BASIC_AUTH_USERNAME')
 app.config['BASIC_AUTH_PASSWORD'] = os.getenv('BASIC_AUTH_PASSWORD')
 
 # Initialisation of extensions
 db.init_app(app)
 migrate.init_app(app, db)  # Initialisation de Migrate
-
 basic_auth = BasicAuth(app)
 
 # Registering admin's blueprint
@@ -77,11 +92,75 @@ with app.app_context():
         print("✅ Connexion DB réussie !")
     except Exception as e:
         print(f"❌ Erreur DB : {e}")
+
 conversations = {}
 
 #________________________!!!_______________________
 # Path for html template
 template_name = "test.html"
+
+#________________Auth______________________________
+
+# Auth decorator
+def auth_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('authenticated'):
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Auth paths modifications
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        try:
+            if beta_helper.is_valid_password(request.form.get('password')):
+                session.permanent = True
+                app.permanent_session_lifetime = beta_helper.session_timeout
+                session['authenticated'] = True
+                session['last_activity'] = datetime.utcnow().isoformat()
+                
+                # Protection contre les redirections malveillantes
+                next_url = request.args.get('next')
+                if next_url and not next_url.startswith('/'):
+                    next_url = None
+                return redirect(next_url or url_for('home'))
+            
+            flash('Unauthorized acces', 'danger')
+        except Exception as e:
+            logger.error(f"Login error: {str(e)}", exc_info=True)
+            flash('Technical issue in connexion', 'danger')
+    
+    return render_template('login.html')
+
+# Aplying to all path
+@app.before_request
+def check_auth_and_activity():
+    excluded = ['login', 'logout', 'static', 'session_status']
+    if request.endpoint in excluded:
+        return
+    
+    if not session.get('authenticated'):
+        return redirect(url_for('login'))
+    
+    # Vérification de l'expiration de session
+    last_activity = session.get('last_activity')
+    if last_activity:
+        last_active = datetime.fromisoformat(last_activity)
+        if (datetime.utcnow() - last_active).total_seconds() > MAX_SESSION_DURATION:
+            session.clear()
+            flash('Session expirée', 'warning')
+            return redirect(url_for('login'))
+    
+    session['last_activity'] = datetime.utcnow().isoformat()
+
+
+@app.route('/logout')
+def logout():
+    session.pop('authenticated', None)
+    return redirect(url_for('login'))
+
 
 # Path for user history
 @app.route('/thread/<string:thread_id>/messages', methods=['GET'])
@@ -94,8 +173,9 @@ def get_thread_messages(thread_id):
     } for message in messages])
 
 
-@app.route('/test')
-def test():
+@app.route('/')
+@auth_required
+def home():
     return render_template(template_name)
 
 @app.route('/session_status', methods=['GET'])

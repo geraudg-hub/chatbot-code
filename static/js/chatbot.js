@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         .copy-code-btn:hover {
-            background-color: rgba(11, 85, 119, 0.1);
+            background-color: #2eac68;
             border-color: #0b5577;
             background-image: url("/static/images/copy.png");
         }
