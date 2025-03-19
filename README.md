@@ -6,6 +6,7 @@ https://chatbot.bunkerstaging.com
 
 ## List of env var for chatbot
 
+DEBUG=1 (en dev)
 AZURE_OPENAI_API_KEY
 AZURE_OPENAI_ENDPOINT
 AZURE_OPENAI_ASSISTANT_ID

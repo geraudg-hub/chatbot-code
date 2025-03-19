@@ -21,4 +21,5 @@ fi
 
 # Start the Flask application
 echo "🚀 Starting the application..."
+python app.py
 flask --app app.py --debug run -h 0.0.0.0 -p 5000

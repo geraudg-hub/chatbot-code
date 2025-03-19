@@ -27,4 +27,3 @@ EXPOSE 5000
 USER www
 WORKDIR /opt/app
 ENTRYPOINT ["/bin/sh", "/opt/app/entrypoint.sh"]
-CMD ["flask", "--app", "app.py", "--debug", "run", "-h", "0.0.0.0", "-p", "5000"]
