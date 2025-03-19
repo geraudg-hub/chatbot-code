@@ -563,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const response = await fetch(`${API_SESSION_STATUS}?thread_id=${threadId}`);
             
-            // Checking content-type
+            // Checking content-type CDF / PLF
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 const errorText = await response.text();

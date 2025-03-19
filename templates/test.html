@@ -1,11 +1,74 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Test Chatbot Integrater</title>
+  <title>BunkerWeb - BunkerBot Access</title>
+  <link rel="stylesheet" href="https://unpkg.com/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="icon" type="image/png" href="https://www.bunkerweb.io/wp-content/uploads/2025/01/favicon.png">
+  
+  <style>
+    /* Styles communs avec login.html */
+    html, body { height: 100%; }
+    .full-height-section { 
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background-color: #0b5577;
+    }
+    .logo-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+    }
+    .custom-hr {
+      width: 60%;
+      margin: 1.5rem auto;
+      opacity: 0.7;
+      border-color: white;
+    }
+
+    /* Styles spécifiques à test.html */
+    .chatbot-instruction {
+      color: white;
+      font-size: 1.5rem;
+      margin-top: 2rem;
+      padding-bottom: 50px;
+    }
+
+    @media (max-width: 768px) {
+      .chatbot-instruction {
+        font-size: 1.2rem;
+        padding: 0 15px 50px;
+      }
+    }
+  </style>
 </head>
 <body>
+  <section class="full-height-section py-3 py-md-5 py-xl-8">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-8 text-center">
+          <div class="logo-container">
+            <img class="img-fluid rounded mb-4 mx-auto" 
+                 src="/static/images/BunkerWeb_logo_blanc.png" 
+                 width="400" 
+                 height="auto" 
+                 alt="BunkerWeb Logo">
+            <hr class="border-white mb-4 custom-hr">
+            <h1 class="text-white mb-4">BunkerBot Beta is Ready!</h1>
+            <p class="chatbot-instruction">
+              The chatbot is now available at the bottom right corner of your screen.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Chatbot injected here -->
   <script src="../static/js/chatbot.js"></script>
 </body>
