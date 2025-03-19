@@ -137,7 +137,9 @@ def login():
 # Aplying to all path
 @app.before_request
 def check_auth_and_activity():
-    excluded = ['login', 'logout', 'static', 'session_status']
+    excluded = ['login', 'logout', 'static', 'session_status', 'admin.*']
+    if request.blueprint == 'admin':
+        return
     if request.endpoint in excluded:
         return
     
@@ -174,7 +176,6 @@ def get_thread_messages(thread_id):
 
 
 @app.route('/')
-@auth_required
 def home():
     return render_template(template_name)
 

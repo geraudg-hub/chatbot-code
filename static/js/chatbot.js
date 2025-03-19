@@ -21,7 +21,10 @@ document.addEventListener('DOMContentLoaded', function() {
       chatbotContainer.innerHTML = `
         <div id="chatbot-header">
           <span id="chatbot-title">BunkerBot</span>
-          <button id="chatbot-close">−</button>
+          <div>
+            <button id="chatbot-expand">+</button>
+            <button id="chatbot-close">−</button>
+          </div>
         </div>
         <div id="chatbot-body"></div>
         <div id="chatbot-footer">
@@ -53,6 +56,56 @@ document.addEventListener('DOMContentLoaded', function() {
           transition: all 0.3s ease;
         }
 
+        #chatbot-expand {
+          position: absolute;
+          top: 20px;
+          right: 80px;
+          background: #0b5577;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 30px;
+          height: 30px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0px 2px 4px rgba(0,0,0,0.3);
+          font-size: 16px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        #chatbot-close {
+          right: 40px;
+        }
+
+        #chatbot-container.enlarged .message.bot {
+          float: none;
+          margin-left: 45px;
+          max-width: 90%;
+          width: auto;
+        }
+
+        #chatbot-container.enlarged .message.user {
+          float: none;
+          margin-right: 45px;
+          max-width: 90%;
+          width: auto;
+          margin-left: auto;
+          padding-right: 20px;
+        }
+
+        #chatbot-container.enlarged {
+          width: 600px;
+          height: 800px;
+          transition: all 0.3s ease;
+        }
+
+        #chatbot-container:not(.minimized):not(.enlarged) {
+          width: 380px;
+          height: 550px;
+        }
+  
         #chatbot-container.minimized {
           width: 100px;
           height: 100px;
@@ -171,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         .message {
           margin-bottom: 35px;
-          padding: 12px 18px;
+          padding: 6px 18px;
           border-radius: 15px;
           max-width: 70%;
           position: relative;
@@ -185,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
           color: black;
           float: right;
           border-bottom-right-radius: 5px;
-          padding-right: 60px;
+          padding-right: 20px;
           margin-right: 60px;
         }
 
@@ -216,11 +269,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         .message.bot {
           background: #0b5577;
-          margin-left: 60px;
+          margin-left: 45px;
           color: white;
           float: left;
           border-bottom-left-radius: 5px;
-          max-width: 70%;
+          max-width: 100%;
           word-wrap: break-word !important;
           overflow-wrap: break-word !important;
           display: block !important;
@@ -447,6 +500,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const chatbot = document.getElementById("chatbot");
         chatbot.classList.remove("chatbot-minimized");
       }
+      
+      document.getElementById('chatbot-expand').addEventListener('click', (event) => {
+        chatbotContainer.classList.remove('minimized');
+        chatbotContainer.classList.add('enlarged');
+        event.stopPropagation();
+      });
       
 
       // Messages with images
@@ -742,7 +801,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Minimize handler
       closeBtn.addEventListener('click', (event) => {
-        chatbotContainer.classList.toggle('minimized');
+        if (chatbotContainer.classList.contains('enlarged')) {
+          chatbotContainer.classList.remove('enlarged');
+        } else if (chatbotContainer.classList.contains('minimized')) {
+          chatbotContainer.classList.remove('minimized');
+        } else {
+          chatbotContainer.classList.add('minimized');
+        }
         event.stopPropagation();
       });
 
