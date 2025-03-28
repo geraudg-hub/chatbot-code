@@ -1,10 +1,22 @@
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, render_template, request, send_file
 from extensions import db
 from models.models import Message, Thread
 from sqlalchemy import func
 from datetime import datetime, timedelta
 from flask_basicauth import BasicAuth
+from io import BytesIO
+import zipfile
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+import markdown
+from bleach.sanitizer import Cleaner
 
+cleaner = Cleaner(
+    tags=['b', 'i', 'em', 'strong', 'p', 'br', 'code', 'pre'],
+    attributes={},
+    strip=True
+)
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -154,3 +166,77 @@ def view_messages(thread_id):
 @basic_auth.required
 def statistiques():
     return render_template('statistiques.html')
+
+@admin_bp.route('/export/period')
+@basic_auth.required
+def export_period():
+    try:
+        # Validation des dates
+        start_date = datetime.fromisoformat(request.args['start'])
+        end_date = datetime.fromisoformat(request.args['end']) + timedelta(days=1)
+        
+        # Récupération des threads
+        threads = Thread.query.filter(
+            Thread.created_at.between(start_date, end_date)
+        ).all()
+        
+        if not threads:
+            return jsonify({"error": "Aucune conversation trouvée"}), 404
+
+        # Création du ZIP
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for thread in threads:
+                pdf_content = generate_thread_pdf(thread)
+                if pdf_content:
+                    filename = f"Conversation_{thread.id}.pdf"
+                    zip_file.writestr(filename, pdf_content)
+
+        zip_buffer.seek(0)
+        return send_file(
+            zip_buffer,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=f'conversations_{start_date.date()}_to_{end_date.date()}.zip'
+        )
+
+    except KeyError:
+        return jsonify({"error": "Paramètres manquants"}), 400
+    except ValueError:
+        return jsonify({"error": "Format de date invalide"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def generate_thread_pdf(thread):
+    try:
+        # Configuration PDF
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        styles = getSampleStyleSheet()
+        elements = []
+        
+        # En-tête
+        elements.append(Paragraph(f"Conversation #{thread.id}", styles['Title']))
+        elements.append(Spacer(1, 12))
+        elements.append(Paragraph(f"Créée le : {thread.created_at.strftime('%d/%m/%Y %H:%M')}", styles['BodyText']))
+        elements.append(Spacer(1, 24))
+
+        # Messages
+        messages = Message.query.filter_by(thread_id=thread.id).order_by(Message.created_at.asc()).all()
+        for msg in messages:
+            # Conversion Markdown vers HTML + nettoyage
+            html_content = markdown.markdown(msg.content)
+            clean_content = cleaner.clean(html_content)
+            
+            # Formatage
+            text = f"<b>{msg.origin.upper()}</b> [{msg.created_at.strftime('%H:%M:%S')}]<br/>{clean_content}"
+            elements.append(Paragraph(text, styles['BodyText']))
+            elements.append(Spacer(1, 12))
+
+        # Génération PDF
+        doc.build(elements)
+        return buffer.getvalue()
+
+    except Exception as e:
+        print(f"Erreur génération PDF: {str(e)}")
+        return None

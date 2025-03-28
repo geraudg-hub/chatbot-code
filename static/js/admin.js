@@ -29,11 +29,15 @@ $(document).ready(function() {
                     return truncatedMessage;
                 }
             },
-            { 
+            {
                 "data": "thread_id",
                 "render": function(data, type, row) {
-                    // Show messages of thread button
-                    return `<a href="/admin/thread/${data}/messages/view" class="btn btn-primary">Voir Messages</a>`;
+                    return `
+                        <div class="btn-group">
+                            <a href="/admin/thread/${data}/messages/view" class="btn btn-primary btn-sm">Voir Messages</a>
+                            <a href="/admin/thread/${data}/export-pdf" class="btn btn-danger btn-sm">Export PDF</a>
+                        </div>
+                    `;
                 }
             }
         ],

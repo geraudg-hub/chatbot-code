@@ -137,9 +137,15 @@ def login():
 # Aplying to all path
 @app.before_request
 def check_auth_and_activity():
+
+    if session and session.get('authenticated'):
+        session.modified = True  # Force session refresh
+        session['last_activity'] = datetime.utcnow().isoformat()
+
     excluded = ['login', 'logout', 'static', 'session_status', 'admin.*']
     if request.blueprint == 'admin':
         return
+    
     if request.endpoint in excluded:
         return
     
@@ -154,7 +160,7 @@ def check_auth_and_activity():
             session.clear()
             flash('Session expirée', 'warning')
             return redirect(url_for('login'))
-    
+    # Update last activity
     session['last_activity'] = datetime.utcnow().isoformat()
 
 
@@ -247,10 +253,16 @@ def chat():
             logger.error("Requête reçue avec un format non JSON")
             return jsonify({"error": "Internal server error"}), 500
             
-        data = request.get_json()
+        data = request.get_json(silent=True) or {}
+        if data is None:
+            return jsonify({"error": "Invalid JSON"}), 400
         thread_id = data.get("thread_id")
         user_message = data.get("message")
 
+        if not data:
+            logger.error("Received empty JSON payload")
+            return jsonify({"error": "Empty request body"}), 400
+        
         # [2] Message data validation
         if not thread_id:
             logger.warning("Request without thread_id")
@@ -261,7 +273,9 @@ def chat():
             return jsonify({"error": "Message empty"}), 400
 
         # Message lenght cheking
-        if len(user_message) > MAX_MESSAGE_CHARACTERS:
+        if not isinstance(user_message, str) or len(user_message.strip()) == 0:
+            return jsonify({"error": "Empty message"}), 400
+        elif len(user_message) > MAX_MESSAGE_CHARACTERS:
             logger.error(f"Message too long ({len(user_message)} caracteres)")
             return jsonify({
                 "error": f"Message too long ({len(user_message)}/{MAX_MESSAGE_CHARACTERS} caracteres)"
@@ -297,10 +311,10 @@ def chat():
 
         # [6] Characteres limite checking before use
         if len(user_message) > MAX_MESSAGE_CHARACTERS:
-            logger.error(f"User message too long ({len(user_message)} caracteres)")
+            logger.error(f"User message too long ({len(user_message)} characters)")
             return jsonify({
-                "error": f"Message trop long ({len(user_message)}/{MAX_MESSAGE_CHARACTERS} caracteres)"
-            }), 
+                "error": f"Message exceeds limit ({len(user_message)}/{MAX_MESSAGE_CHARACTERS} characters)"
+            }), 400 
 
         # [7] Registering user message
         try:

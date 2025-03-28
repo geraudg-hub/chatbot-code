@@ -8,6 +8,11 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- CSS DataTables -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <!-- Bibliothèques PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&family=Noto+Sans:wdth,wght@87.5,400;100,400&display=swap" rel="stylesheet">
   <style>
     .section-title {
       margin-top: 30px;
@@ -17,23 +22,20 @@
       white-space: nowrap;
     }
     #threadsTable td:last-child {
-      max-width: 300px;
+      max-width: none;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
-
+    .btn-group .btn {
+      margin: 2px;
+    }
     #threadsTable th:nth-child(2), 
     #threadsTable td:nth-child(2) {
       width: 200px; 
     }
-
     #threadsTable th:nth-child(5), 
     #threadsTable td:nth-child(5) {
       width: 300px;
     }
-
-
   </style>
 </head>
 <body>
@@ -45,7 +47,23 @@
       <h1>Tableau de bord - Admin Chatbot</h1>
     </header>
 
-    <!-- Table of Threads -->
+    <section id="period-export" class="mb-5">
+      <h3 class="section-title">Exporter par période</h3>
+      <div class="row g-3 align-items-center">
+        <div class="col-md-4">
+          <input type="date" id="startDate" class="form-control" required>
+        </div>
+        <div class="col-md-4">
+          <input type="date" id="endDate" class="form-control" required>
+        </div>
+        <div class="col-md-4">
+          <button class="btn btn-success w-100" onclick="exportPeriod()">
+            <i class="bi bi-file-zip"></i> Exporter ZIP
+          </button>
+        </div>
+      </div>
+    </section>
+
     <section id="threads">
       <h2 class="section-title">Liste des Threads</h2>
       <table id="threadsTable" class="display table table-striped">
@@ -56,23 +74,260 @@
             <th>Date de création</th>
             <th>Nb messages</th>
             <th>Dernier message</th>
-            <th>Action</th>
+            <th>Actions</th>
           </tr>
         </thead>
-        <tbody>
-        </tbody>
+        <tbody></tbody>
       </table>
     </section>
   </div>
 
-  <!-- jQuery -->
+  <!-- Scripts -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <!-- DataTables JS -->
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-  <!-- Bootstrap Bundle JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-  <!-- Script admin.js -->
-  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.plugin.acroform.min.js"></script>
+
+  <script>
+    async function exportPeriod() {
+      const start = document.getElementById('startDate').value;
+      const end = document.getElementById('endDate').value;
+    
+      if (!start || !end || new Date(start) > new Date(end)) {
+        alert('Période invalide');
+        return;
+      }
+    
+      try {
+        const btn = event.currentTarget;
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Génération...';
+    
+        const response = await fetch(`/admin/export/period?start=${start}&end=${end}`);
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Erreur serveur');
+        }
+    
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `conversations_${start}_${end}.zip`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    
+      } catch (error) {
+        console.error('Erreur:', error);
+        alert(`Erreur : ${error.message}`);
+      } finally {
+        const btn = document.querySelector('#period-export button');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-file-zip"></i> Exporter ZIP';
+      }
+    }
+  </script>
+
+  <script>
+    async function exportToPdf(threadId) {
+        try {
+            const response = await fetch(`/admin/thread/${threadId}/messages`);
+            const messages = await response.json();
+    
+            let printContent = `
+                <style>
+                    body {
+                        font-family: Arial, Helvetica, sans-serif;
+                        line-height: 1.6;
+                        -webkit-print-color-adjust: exact;
+                    }
+                    pre, code {
+                        font-family: monospace !important;
+                        white-space: pre-wrap !important;
+                        word-break: break-word !important;
+                    }
+                    .message-content {
+                        unicode-bidi: embed;
+                    }
+                </style>
+                <div class="pdf-header">
+                    <h1>Historique #${threadId}</h1>
+                    <p>Généré le ${new Date().toLocaleString()}</p>
+                </div>`;
+    
+            messages.forEach(msg => {
+                // Décodage des entités HTML
+                const decodedContent = new TextDecoder("utf-8").decode(new TextEncoder().encode(msg.content));
+
+                // Nettoyage personnalisé
+                const sanitized = DOMPurify.sanitize(marked.parse(decodedContent), {
+                    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'code', 'pre'],
+                    ALLOW_UNICODE: true,
+                    FORBID_ATTR: ['style', 'class']
+                });
+    
+                printContent += `
+                    <div class="message">
+                        <div class="header">
+                            <strong>${msg.origin.toUpperCase()}</strong>
+                            <span class="timestamp">${new Date(msg.created_at).toLocaleString()}</span>
+                        </div>
+                        <div class="message-content">${sanitized}</div>
+                    </div>`;
+            });
+    
+            const element = document.createElement('div');
+            element.innerHTML = printContent;
+    
+            const options = {
+                margin: [10, 10],
+                filename: `conversation_${threadId}.pdf`,
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    letterRendering: true,
+                    onclone: (clonedDoc) => {
+                    clonedDoc.body.style.fontFamily = "'Noto Sans JP', 'Arial', sans-serif";
+                }
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'portrait',
+                    compress: false,
+                    putOnlyUsedFonts: true,
+                    hotfixes: ["px_scaling"]
+                }
+            };
+    
+            await html2pdf().set(options).from(element).save();
+    
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Erreur lors de la génération du PDF');
+        }
+    }
+  </script>
+
+  <script>
+    // Fonction de génération PDF
+    async function exportToPdf(threadId) {
+      try {
+        const response = await fetch(`/admin/thread/${threadId}/messages`);
+        const messages = await response.json();
+
+        let printContent = `
+          <style>
+            .pdf-header { text-align: center; margin-bottom: 20px; }
+            .message { margin: 15px 0; padding: 10px; border-radius: 8px; page-break-inside: avoid; }
+            .user-message { background: #e3f2fd; margin-left: 20%; }
+            .bot-message { background: #f5f5f5; margin-right: 20%; }
+            .timestamp { font-size: 0.8em; color: #666; margin-bottom: 5px; }
+            pre { background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 5px; overflow-x: auto; }
+            code { font-family: 'Courier New', monospace; }
+          </style>
+          <div class="pdf-header">
+            <h1>Historique #${threadId}</h1>
+            <p>Généré le ${new Date().toLocaleString()}</p>
+          </div>`;
+
+        messages.forEach(msg => {
+          const sanitized = DOMPurify.sanitize(marked.parse(msg.content));
+          printContent += `
+            <div class="message ${msg.origin}-message">
+              <div class="header">
+                <strong>${msg.origin.toUpperCase()}</strong>
+                <span class="timestamp">${new Date(msg.created_at).toLocaleString()}</span>
+              </div>
+              ${sanitized}
+            </div>`;
+        });
+
+        const element = document.createElement('div');
+        element.innerHTML = printContent;
+
+        // Configuration PDF
+        const options = {
+          margin: [10, 10],
+          filename: `conversation_${threadId}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { 
+            scale: 2,
+            useCORS: true,
+            letterRendering: true
+          },
+          jsPDF: { 
+            unit: 'mm', 
+            format: 'a4', 
+            orientation: 'portrait' 
+          }
+        };
+
+        html2pdf().set(options).from(element).save();
+
+      } catch (error) {
+        console.error('Erreur:', error);
+        alert('Erreur lors de la génération du PDF');
+      }
+    }
+
+    // Initialisation DataTable
+    $(document).ready(function() {
+      $('#threadsTable').DataTable({
+        "ajax": {
+          "url": "/admin/threads",
+          "dataSrc": ""
+        },
+        "columns": [
+          { "data": "thread_id" },
+          { "data": "title" },
+          {
+            "data": "created_at",
+            "render": function(data, type, row) {
+              const dateObj = new Date(data);
+              return `
+                <span class="sortableDate" style="display: none;">${dateObj.toISOString()}</span>
+                ${dateObj.toLocaleString()}`;
+            }
+          },
+          { "data": "message_count" },
+          { 
+            "data": "last_message",
+            "render": function(data) {
+              return data.length > 100 ? 
+                data.substring(0, 100) + "..." : data;
+            }
+          },
+          { 
+            "data": "thread_id",
+            "render": function(data) {
+              return `
+                <div class="btn-group">
+                  <a href="/admin/thread/${data}/messages/view" 
+                     class="btn btn-primary btn-sm">
+                    Voir Messages
+                  </a>
+                  <button onclick="exportToPdf('${data}')" 
+                     class="btn btn-danger btn-sm"
+                     title="Exporter en PDF">
+                    <i class="bi bi-file-pdf"></i> PDF
+                  </button>
+                </div>`;
+            }
+          }
+        ],
+        "order": [[ 2, "desc" ]],
+        "language": {
+          "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json"
+        }
+      });
+    });
+  </script>
 </body>
 </html>
