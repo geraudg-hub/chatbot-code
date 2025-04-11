@@ -118,8 +118,10 @@ def login():
             if beta_helper.is_valid_password(request.form.get('password')):
                 session.permanent = True
                 app.permanent_session_lifetime = beta_helper.session_timeout
-                session['authenticated'] = True
-                session['last_activity'] = datetime.utcnow().isoformat()
+                session.update({
+                    'authenticated': True,
+                    'last_activity': datetime.utcnow().isoformat()
+                })
                 
                 # Protection contre les redirections malveillantes
                 next_url = request.args.get('next')
@@ -137,8 +139,9 @@ def login():
 # Aplying to all path
 @app.before_request
 def check_auth_and_activity():
+    
 
-    if session and session.get('authenticated'):
+    if session.get('authenticated'):
         session.modified = True  # Force session refresh
         session['last_activity'] = datetime.utcnow().isoformat()
 

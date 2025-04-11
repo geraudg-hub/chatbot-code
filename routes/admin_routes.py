@@ -240,3 +240,5 @@ def generate_thread_pdf(thread):
     except Exception as e:
         print(f"Erreur génération PDF: {str(e)}")
         return None
+    
+

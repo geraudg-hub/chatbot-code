@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const resizeHandle = document.createElement('div');
       resizeHandle.id = 'resize-handle';
-      chatbotContainer.appendChild(resizeHandle);
 
       chatbotContainer.classList.add('minimized');
 
@@ -506,39 +505,6 @@ document.addEventListener('DOMContentLoaded', function() {
           transform: translateY(-5px);
           opacity: 1;
         }
-      }
-
-        #resize-handle {
-          position: absolute;
-          top: -5px;
-          left: -5px;
-          width: 20px;
-          height: 20px;
-          cursor: nwse-resize;
-          z-index: 1001;
-          background: #0b557755;
-          border-radius: 50%;
-          transition: transform 0.2s;
-          display: none;
-      }
-
-      #chatbot-container:not(.minimized):not(.enlarged) #resize-handle {
-          display: block;
-      }
-
-      #resize-handle:hover {
-          transform: scale(1.2);
-          background: #0b5577;
-      }
-
-      #chatbot-container.resizing {
-          width: auto !important;
-          height: auto !important;
-          cursor: nwse-resize !important;
-          transition: none !important;
-          user-select: none;
-          transition: none !important;
-          transform: none !important;
       }
       `;
       document.head.appendChild(style);

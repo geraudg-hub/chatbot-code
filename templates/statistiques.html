@@ -54,53 +54,58 @@
     </div>
 
   </div>
-  
-  <!-- Script pour le graphique fixe des threads sur 30 jours -->
+
+  <!-- Script pour le graphique des threads -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Génération des étiquettes pour les 30 derniers jours
-      const labels = Array.from({length: 30}, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - (29 - i));
-        return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-      });
+      fetch('/admin/messages/threads_per_day?days=30')
+        .then(response => response.json())
+        .then(data => {
+          const threadsData = data.threads_data;
 
-      // Exemple de données (à remplacer par vos données réelles)
-      const threadData = Array.from({length: 30}, () => Math.floor(Math.random() * 100));
+          // Génération des dates des 30 derniers jours
+          const labels = Array.from({length: 30}, (_, i) => {
+            const date = new Date();
+            date.setDate(date.getDate() - (29 - i));
+            return date.toISOString().split('T')[0]; // Format YYYY-MM-DD
+          });
 
-      const ctx = document.getElementById('threadsPerDayChart').getContext('2d');
-      new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Nombre de threads',
-            data: threadData,
-            fill: false,
-            borderColor: 'rgb(75, 192, 192)',
-            tension: 0.1,
-            pointBackgroundColor: 'rgb(75, 192, 192)',
-            pointRadius: 5
-          }]
-        },
-        options: {
-          scales: {
-            x: {
-              title: {
-                display: true,
-                text: 'Date'
-              }
+          // Alignement des données avec les dates
+          const threadCounts = labels.map(date => {
+            const found = threadsData.find(item => item.date === date);
+            return found ? found.thread_count : 0;
+          });
+
+          const ctx = document.getElementById('threadsPerDayChart').getContext('2d');
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels.map(date => 
+                new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+              ),
+              datasets: [{
+                label: 'Nombre de threads',
+                data: threadCounts,
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgb(75, 192, 192)',
+                borderWidth: 1
+              }]
             },
-            y: {
-              title: {
-                display: true,
-                text: 'Nombre de threads'
-              },
-              beginAtZero: true
+            options: {
+              responsive: true,
+              scales: {
+                x: {
+                  title: { display: true, text: 'Date' }
+                },
+                y: {
+                  title: { display: true, text: 'Nombre de threads' },
+                  beginAtZero: true
+                }
+              }
             }
-          }
-        }
-      });
+          });
+        })
+        .catch(error => console.error('Erreur:', error));
     });
   </script>
 
