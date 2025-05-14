@@ -644,21 +644,26 @@ document.addEventListener('DOMContentLoaded', function() {
       const closeBtn = document.getElementById('chatbot-close');
       let isWaitingForResponse = false;
 
-      // Messages display
+      // Fonction displayMessage avec parsing Markdown et sanitization
       function displayMessage(content, sender) {
         const cleanedContent = content.replace(/【.*?】/g, ''); 
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message', sender);
         
         if(sender === 'bot') {
+          // Parsing Markdown + Sanitization DOM
             messageDiv.innerHTML = `
                 <div class="bot-content">
                 ${DOMPurify.sanitize(marked.parse(cleanedContent))}
                 </div>
             `;
-        } else {
-            messageDiv.textContent = content;
-        }
+          } else {
+            messageDiv.innerHTML = `
+              <div class="user-content">
+                ${DOMPurify.sanitize(cleanedContent)}
+              </div>
+            `;
+          }
         
         chatBody.appendChild(messageDiv);
         chatBody.scrollTop = chatBody.scrollHeight;
@@ -699,7 +704,7 @@ document.addEventListener('DOMContentLoaded', function() {
               });
             });
         }
-    }
+      }
 
     function showTypingIndicator() {
       const typingDiv = document.createElement('div');
@@ -763,6 +768,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Function for POST request
     async function sendMessage(message) {
       isWaitingForResponse = true;
       displayMessage(message, 'user');
@@ -898,7 +904,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     loadHistory();
 
-      // Event handler
+      // Event handler click
       sendBtn.addEventListener('click', () => {
         if (isWaitingForResponse) return;
         const userMessage = input.value.trim();
@@ -907,6 +913,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
 
+      // Event handler "Enter"
       input.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' && !event.shiftKey) {
           event.preventDefault();

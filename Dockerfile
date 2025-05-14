@@ -14,7 +14,7 @@ COPY templates /opt/app/templates
 COPY static /opt/app/static
 COPY routes /opt/app/routes
 COPY models /opt/app/models
-COPY migrations /opt/app/migrations
+COPY tests /opt/app/tests
 
 # Copier script
 COPY entrypoint.sh /opt/app/entrypoint.sh

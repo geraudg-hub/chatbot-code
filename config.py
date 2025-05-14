@@ -4,5 +4,5 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    BASIC_AUTH_USERNAME = os.getenv('BASIC_AUTH_USERNAME')
-    BASIC_AUTH_PASSWORD = os.getenv('BASIC_AUTH_PASSWORD')
+    SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}@{os.getenv('MYSQL_HOST')}/{os.getenv('MYSQL_DB')}"
+    SQLALCHEMY_TRACK_MODIFICATIONS = False

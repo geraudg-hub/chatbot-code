@@ -12,7 +12,7 @@ from extensions import db, migrate
 from models.models import Thread, Message
 from config import Config
 from flask_basicauth import BasicAuth
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from sqlalchemy import func
 from functools import wraps
@@ -62,12 +62,13 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY') or os.urandom(24).hex()
 
 # Configuration of database
-class Config:
-    SQLALCHEMY_DATABASE_URI = (
-        f"mysql+pymysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}@"
-        f"{os.getenv('MYSQL_HOST')}:{os.getenv('MYSQL_PORT')}/{os.getenv('MYSQL_DB')}"
-    )
-    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
+app.config['SQLALCHEMY_DATABASE_URI'] = (
+    f"mysql+pymysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}"
+    f"@{os.getenv('MYSQL_HOST')}:{os.getenv('MYSQL_PORT')}/{os.getenv('MYSQL_DB')}"
+)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True}
+
 
 app.config.from_object(Config)
 app.config['BASIC_AUTH_USERNAME'] = os.getenv('BASIC_AUTH_USERNAME')
@@ -110,7 +111,7 @@ def auth_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# Auth paths modifications
+# Auth path
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -118,10 +119,8 @@ def login():
             if beta_helper.is_valid_password(request.form.get('password')):
                 session.permanent = True
                 app.permanent_session_lifetime = beta_helper.session_timeout
-                session.update({
-                    'authenticated': True,
-                    'last_activity': datetime.utcnow().isoformat()
-                })
+                session['authenticated'] = True
+                session['last_activity'] = datetime.now(timezone.utc).isoformat()
                 
                 # Protection contre les redirections malveillantes
                 next_url = request.args.get('next')
@@ -133,17 +132,16 @@ def login():
         except Exception as e:
             logger.error(f"Login error: {str(e)}", exc_info=True)
             flash('Technical issue in connexion', 'danger')
-    
+
     return render_template('login.html')
 
 # Aplying to all path
 @app.before_request
 def check_auth_and_activity():
     
-
     if session.get('authenticated'):
         session.modified = True  # Force session refresh
-        session['last_activity'] = datetime.utcnow().isoformat()
+        session['last_activity'] = datetime.now(timezone.utc).isoformat()
 
     excluded = ['login', 'logout', 'static', 'session_status', 'admin.*']
     if request.blueprint == 'admin':
@@ -159,12 +157,12 @@ def check_auth_and_activity():
     last_activity = session.get('last_activity')
     if last_activity:
         last_active = datetime.fromisoformat(last_activity)
-        if (datetime.utcnow() - last_active).total_seconds() > MAX_SESSION_DURATION:
+        if (datetime.now(timezone.utc) - last_active).total_seconds() > MAX_SESSION_DURATION:
             session.clear()
             flash('Session expirée', 'warning')
             return redirect(url_for('login'))
     # Update last activity
-    session['last_activity'] = datetime.utcnow().isoformat()
+    session['last_activity'] = datetime.now(timezone.utc).isoformat()
 
 
 @app.route('/logout')
@@ -206,7 +204,7 @@ def session_status():
                     .filter(Message.thread_id == thread_id)\
                     .scalar() or 0
 
-        session_age = (datetime.utcnow() - thread.created_at).total_seconds()
+        session_age = (datetime.now(timezone.utc) - thread.created_at).total_seconds()
         remaining_time = MAX_SESSION_DURATION - session_age
         remaining_chars = MAX_CHARACTERS - total_chars
 
@@ -295,7 +293,7 @@ def chat():
             return jsonify({"error": "Session expired. Start a new conversation"}), 403
 
         # [4] Timout expiration checking
-        session_age = (datetime.utcnow() - thread.created_at).total_seconds()
+        session_age = (datetime.now(timezone.utc) - thread.created_at).total_seconds()
         if session_age > MAX_SESSION_DURATION:
             logger.info(f"Thread expired (time) {thread_id} ({session_age}s)")
             thread.status = 'expired'

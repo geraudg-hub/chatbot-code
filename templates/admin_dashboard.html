@@ -279,55 +279,50 @@
 
     // Initialisation DataTable
     $(document).ready(function() {
-      $('#threadsTable').DataTable({
+    $('#threadsTable').DataTable({
         "ajax": {
-          "url": "/admin/threads",
-          "dataSrc": ""
+            "url": "/admin/threads",
+            "dataSrc": "data"  // Pointer vers la clé 'data'
         },
         "columns": [
-          { "data": "thread_id" },
-          { "data": "title" },
-          {
-            "data": "created_at",
-            "render": function(data, type, row) {
-              const dateObj = new Date(data);
-              return `
-                <span class="sortableDate" style="display: none;">${dateObj.toISOString()}</span>
-                ${dateObj.toLocaleString()}`;
+            { "data": "thread_id" },
+            { "data": "title" },
+            { 
+                "data": "created_at",
+                "render": function(data) {
+                    return data ? new Date(data).toLocaleString('fr-FR') : 'N/A'
+                }
+            },
+            { "data": "message_count" },
+            { 
+                "data": "last_message",
+                "render": function(data) {
+                    return data?.length > 100 ? data.substring(0, 100) + "..." : data || "Aucun"
+                }
+            },
+            {
+                "data": "thread_id",
+                "render": function(data) {
+                    return `
+                        <div class="btn-group">
+                            <a href="/admin/thread/${data}/messages/view" class="btn btn-primary btn-sm">
+                                <i class="bi bi-chat"></i>
+                            </a>
+                            <button onclick="exportToPdf('${data}')" class="btn btn-danger btn-sm">
+                                <i class="bi bi-file-pdf"></i>
+                            </button>
+                        </div>`;
+                }
             }
-          },
-          { "data": "message_count" },
-          { 
-            "data": "last_message",
-            "render": function(data) {
-              return data.length > 100 ? 
-                data.substring(0, 100) + "..." : data;
-            }
-          },
-          { 
-            "data": "thread_id",
-            "render": function(data) {
-              return `
-                <div class="btn-group">
-                  <a href="/admin/thread/${data}/messages/view" 
-                     class="btn btn-primary btn-sm">
-                    Voir Messages
-                  </a>
-                  <button onclick="exportToPdf('${data}')" 
-                     class="btn btn-danger btn-sm"
-                     title="Exporter en PDF">
-                    <i class="bi bi-file-pdf"></i> PDF
-                  </button>
-                </div>`;
-            }
-          }
         ],
-        "order": [[ 2, "desc" ]],
+        "order": [[2, "desc"]],
         "language": {
-          "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json"
-        }
-      });
+            "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json"
+        },
+        "responsive": true,
+        "autoWidth": false
     });
+});
   </script>
 </body>
 </html>
