@@ -129,8 +129,3 @@ chatbot/
 - Export conversation history
 - Improved error handling and reporting
 
----
-
-## 📄 License
-
-MIT License – feel free to use, modify, and distribute with attribution.
